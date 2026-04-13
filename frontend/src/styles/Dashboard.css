@@ -23,10 +23,10 @@
 }
 
 .stat-box {
-  background: white;
+  background: linear-gradient(135deg, #8b2f39 0%, #6b1f2a 100%);
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   text-align: center;
   min-height: 140px;
   display: flex;
@@ -36,20 +36,21 @@
 
 .stat-label {
   font-size: 14px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.85);
   margin-bottom: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 500;
 }
 
 .stat-value {
   font-size: 32px;
   font-weight: bold;
-  color: #8b2f39;
+  color: #ffffff;
 }
 
 .stat-value.highlight {
-  color: #2e7d32;
+  color: #4caf50;
 }
 
 .products-section {

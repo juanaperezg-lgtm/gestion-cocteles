@@ -8,6 +8,18 @@ function Navigation({ onLogout }) {
 
   const isActive = (path) => location.pathname === path;
 
+  const handleLogout = () => {
+    // Limpiar localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    // Llamar callback
+    onLogout();
+
+    // Redirigir al login
+    navigate('/login', { replace: true });
+  };
+
   return (
     <nav className="navbar">
       <div className="nav-container">
@@ -19,7 +31,10 @@ function Navigation({ onLogout }) {
           <li>
             <a
               href="/"
-              onClick={() => navigate('/')}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/');
+              }}
               className={isActive('/') ? 'active' : ''}
             >
               Dashboard
@@ -28,7 +43,10 @@ function Navigation({ onLogout }) {
           <li>
             <a
               href="/sales"
-              onClick={() => navigate('/sales')}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/sales');
+              }}
               className={isActive('/sales') ? 'active' : ''}
             >
               Ventas
@@ -37,7 +55,10 @@ function Navigation({ onLogout }) {
           <li>
             <a
               href="/products"
-              onClick={() => navigate('/products')}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/products');
+              }}
               className={isActive('/products') ? 'active' : ''}
             >
               Productos
@@ -46,7 +67,10 @@ function Navigation({ onLogout }) {
           <li>
             <a
               href="/purchases"
-              onClick={() => navigate('/purchases')}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/purchases');
+              }}
               className={isActive('/purchases') ? 'active' : ''}
             >
               Compras
@@ -55,7 +79,10 @@ function Navigation({ onLogout }) {
           <li>
             <a
               href="/inventory"
-              onClick={() => navigate('/inventory')}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/inventory');
+              }}
               className={isActive('/inventory') ? 'active' : ''}
             >
               Inventario
@@ -64,7 +91,10 @@ function Navigation({ onLogout }) {
           <li>
             <a
               href="/reports"
-              onClick={() => navigate('/reports')}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/reports');
+              }}
               className={isActive('/reports') ? 'active' : ''}
             >
               Reportes
@@ -74,7 +104,7 @@ function Navigation({ onLogout }) {
 
         <div className="nav-right">
           <span className="user-info">{user.full_name || user.username}</span>
-          <button onClick={onLogout} className="logout-btn">
+          <button onClick={handleLogout} className="logout-btn">
             Logout
           </button>
         </div>
