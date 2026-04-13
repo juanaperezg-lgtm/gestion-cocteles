@@ -4,6 +4,8 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Products from './pages/Products';
+import Purchases from './pages/Purchases';
+import Inventory from './pages/Inventory';
 import Reports from './pages/Reports';
 import './styles/App.css';
 
@@ -33,6 +35,14 @@ function App() {
         <Route
           path="/products"
           element={isAuthenticated ? <Products /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/purchases"
+          element={isAuthenticated ? <Purchases /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/inventory"
+          element={isAuthenticated ? <Inventory /> : <Navigate to="/login" />}
         />
         <Route
           path="/reports"

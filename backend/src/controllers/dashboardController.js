@@ -91,3 +91,28 @@ export const getDashboardMonth = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener datos del dashboard' });
   }
 };
+
+export const getInventoryStatus = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.id, p.name, p.stock_quantity, p.purchase_price, p.sale_price,
+              (p.stock_quantity * p.purchase_price) as inventory_cost,
+              (p.stock_quantity * p.sale_price) as inventory_value
+       FROM products p
+       ORDER BY p.stock_quantity DESC`
+    );
+
+    const totalInventoryCost = result.rows.reduce((sum, p) => sum + (parseFloat(p.inventory_cost) || 0), 0);
+    const totalInventoryValue = result.rows.reduce((sum, p) => sum + (parseFloat(p.inventory_value) || 0), 0);
+
+    res.json({
+      products: result.rows,
+      total_inventory_cost: totalInventoryCost,
+      total_inventory_value: totalInventoryValue,
+      potential_profit: totalInventoryValue - totalInventoryCost,
+    });
+  } catch (error) {
+    console.error('Error al obtener inventario:', error);
+    res.status(500).json({ error: 'Error al obtener estado del inventario' });
+  }
+};

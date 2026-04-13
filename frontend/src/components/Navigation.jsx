@@ -45,6 +45,24 @@ function Navigation({ onLogout }) {
           </li>
           <li>
             <a
+              href="/purchases"
+              onClick={() => navigate('/purchases')}
+              className={isActive('/purchases') ? 'active' : ''}
+            >
+              Compras
+            </a>
+          </li>
+          <li>
+            <a
+              href="/inventory"
+              onClick={() => navigate('/inventory')}
+              className={isActive('/inventory') ? 'active' : ''}
+            >
+              Inventario
+            </a>
+          </li>
+          <li>
+            <a
               href="/reports"
               onClick={() => navigate('/reports')}
               className={isActive('/reports') ? 'active' : ''}
