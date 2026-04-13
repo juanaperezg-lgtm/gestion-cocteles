@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Products from './pages/Products';
+import Reports from './pages/Reports';
 import './styles/App.css';
 
 function App() {
@@ -32,6 +33,10 @@ function App() {
         <Route
           path="/products"
           element={isAuthenticated ? <Products /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/reports"
+          element={isAuthenticated ? <Reports /> : <Navigate to="/login" />}
         />
       </Routes>
     </Router>

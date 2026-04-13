@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import salesRoutes from './routes/sales.js';
 import productsRoutes from './routes/products.js';
 import dashboardRoutes from './routes/dashboard.js';
+import { authMiddleware } from './middleware/auth.js';
 
 dotenv.config();
 
@@ -17,9 +18,9 @@ app.use(express.json());
 
 // Rutas
 app.use('/api/auth', authRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/products', productsRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/sales', authMiddleware, salesRoutes);
+app.use('/api/products', authMiddleware, productsRoutes);
+app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {

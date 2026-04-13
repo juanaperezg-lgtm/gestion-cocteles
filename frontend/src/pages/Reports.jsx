@@ -1,0 +1,212 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { salesAPI } from '../services/api';
+import Navigation from '../components/Navigation';
+import '../styles/Reports.css';
+
+function Reports() {
+  const [sales, setSales] = useState([]);
+  const [filteredSales, setFilteredSales] = useState([]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchAllSales();
+  }, []);
+
+  const fetchAllSales = async () => {
+    try {
+      const response = await salesAPI.getAll();
+      setSales(response.data);
+      setFilteredSales(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching sales:', error);
+      if (error.response?.status === 401) {
+        navigate('/login');
+      }
+    }
+  };
+
+  const handleFilter = () => {
+    if (!startDate || !endDate) {
+      setFilteredSales(sales);
+      return;
+    }
+
+    const filtered = sales.filter((sale) => {
+      const saleDate = new Date(sale.sale_date);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      return saleDate >= start && saleDate <= end;
+    });
+
+    setFilteredSales(filtered);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  const calculateTotals = () => {
+    return {
+      totalSales: filteredSales.length,
+      totalRevenue: filteredSales.reduce((sum, sale) => sum + sale.total_amount, 0),
+      averagePerSale: filteredSales.length > 0
+        ? (filteredSales.reduce((sum, sale) => sum + sale.total_amount, 0) / filteredSales.length)
+        : 0,
+    };
+  };
+
+  const downloadCSV = () => {
+    const totals = calculateTotals();
+    const headers = ['Producto', 'Cantidad', 'Precio Unitario', 'Total', 'Fecha', 'Hora'];
+    const rows = filteredSales.map((sale) => [
+      sale.product_name,
+      sale.quantity,
+      sale.unit_price,
+      sale.total_amount,
+      sale.sale_date,
+      sale.sale_time,
+    ]);
+
+    const csvContent = [
+      ['Reporte de Ventas'],
+      ['Período', `${startDate || 'Todas'} - ${endDate || 'Todas'}`],
+      ['Fecha de generación', new Date().toLocaleString('es-AR')],
+      [],
+      ['RESUMEN'],
+      ['Total de Ventas', totals.totalSales],
+      ['Ingresos Totales', `$${totals.totalRevenue.toFixed(2)}`],
+      ['Promedio por Venta', `$${totals.averagePerSale.toFixed(2)}`],
+      [],
+      [headers.join(',')],
+      ...rows.map((row) => row.join(',')),
+    ]
+      .map((row) => (Array.isArray(row) ? row.join(',') : row))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reporte_ventas_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
+  if (loading) return <div className="loading">Cargando reportes...</div>;
+
+  const totals = calculateTotals();
+
+  return (
+    <div className="reports-page">
+      <Navigation onLogout={handleLogout} />
+
+      <div className="container">
+        <h1>📊 Reportes de Ventas</h1>
+
+        <div className="reports-content">
+          <div className="filter-section">
+            <h2>Filtrar por Período</h2>
+
+            <div className="form-group">
+              <label>Fecha Inicio</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Fecha Fin</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+
+            <button onClick={handleFilter} className="filter-btn">
+              Filtrar
+            </button>
+
+            <button onClick={() => {
+              setStartDate('');
+              setEndDate('');
+              setFilteredSales(sales);
+            }} className="reset-btn">
+              Limpiar Filtro
+            </button>
+
+            <button onClick={downloadCSV} className="download-btn">
+              📥 Descargar CSV
+            </button>
+          </div>
+
+          <div className="report-section">
+            <div className="summary-cards">
+              <div className="summary-card">
+                <div className="summary-label">Total de Ventas</div>
+                <div className="summary-value">{totals.totalSales}</div>
+              </div>
+
+              <div className="summary-card">
+                <div className="summary-label">Ingresos Totales</div>
+                <div className="summary-value">
+                  ${totals.totalRevenue.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                </div>
+              </div>
+
+              <div className="summary-card">
+                <div className="summary-label">Promedio por Venta</div>
+                <div className="summary-value">
+                  ${totals.averagePerSale.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                </div>
+              </div>
+            </div>
+
+            {filteredSales.length === 0 ? (
+              <p className="empty-message">No hay ventas en el período seleccionado</p>
+            ) : (
+              <div className="table-wrapper">
+                <table className="reports-table">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>Cantidad</th>
+                      <th>Precio Unitario</th>
+                      <th>Total</th>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSales.map((sale) => (
+                      <tr key={sale.id}>
+                        <td>{sale.product_name}</td>
+                        <td>{sale.quantity}</td>
+                        <td>${sale.unit_price.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
+                        <td className="total">
+                          ${sale.total_amount.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                        </td>
+                        <td>{sale.sale_date}</td>
+                        <td>{sale.sale_time}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Reports;
