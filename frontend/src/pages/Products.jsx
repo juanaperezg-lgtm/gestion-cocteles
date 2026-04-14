@@ -29,6 +29,7 @@ function Products() {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setLoading(false);
       if (error.response?.status === 401) {
         navigate('/login');
       }

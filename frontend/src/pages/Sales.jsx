@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Plus, AlertCircle, CheckCircle } from 'lucide-react';
 import { salesAPI, productsAPI } from '../services/api';
 import Navigation from '../components/Navigation';
 import '../styles/Sales.css';
@@ -34,6 +35,7 @@ function Sales() {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setLoading(false);
       if (error.response?.status === 401) {
         navigate('/login');
       }
@@ -80,7 +82,7 @@ function Sales() {
 
   if (loading) return <div className="loading">Cargando...</div>;
 
-  const [messageType, messageText] = message.split(':');
+  const [messageType, messageText] = message ? message.split(':') : ['', ''];
 
   return (
     <div className="sales-page">
@@ -94,7 +96,12 @@ function Sales() {
             <h2>Registrar Nueva Venta</h2>
             {message && (
               <div className={`message ${messageType}`}>
-                {messageText}
+                {messageType === 'success' ? (
+                  <CheckCircle size={20} />
+                ) : (
+                  <AlertCircle size={20} />
+                )}
+                <span>{messageText}</span>
               </div>
             )}
 
@@ -153,6 +160,7 @@ function Sales() {
               </div>
 
               <button type="submit" className="submit-btn">
+                <Plus size={18} />
                 Registrar Venta
               </button>
             </form>

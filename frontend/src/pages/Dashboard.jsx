@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { TrendingUp, BarChart3, Target, Zap } from 'lucide-react';
 import { dashboardAPI } from '../services/api';
 import Navigation from '../components/Navigation';
 import '../styles/Dashboard.css';
@@ -25,6 +26,7 @@ function Dashboard() {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard:', error);
+      setLoading(false);
       if (error.response?.status === 401) {
         navigate('/login');
       }
@@ -50,21 +52,30 @@ function Dashboard() {
           <h2>Hoy</h2>
           <div className="grid">
             <div className="stat-box">
-              <div className="stat-label">Total Vendido</div>
+              <div className="stat-label">
+                <TrendingUp size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Total Vendido
+              </div>
               <div className="stat-value">
                 ${todayData?.total_sales?.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
               </div>
             </div>
 
             <div className="stat-box">
-              <div className="stat-label">Cantidad de Ventas</div>
+              <div className="stat-label">
+                <BarChart3 size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Cantidad de Ventas
+              </div>
               <div className="stat-value">{todayData?.sales_count || 0}</div>
             </div>
 
             <div className="stat-box">
-              <div className="stat-label">Promedio por Venta</div>
+              <div className="stat-label">
+                <Target size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Promedio por Venta
+              </div>
               <div className="stat-value">
-                ${(todayData?.total_sales / (todayData?.sales_count || 1)).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                ${(todayData?.sales_count > 0 ? todayData?.total_sales / todayData?.sales_count : 0).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
               </div>
             </div>
           </div>
@@ -100,21 +111,30 @@ function Dashboard() {
           <h2>Este Mes</h2>
           <div className="grid">
             <div className="stat-box">
-              <div className="stat-label">Ingresos Totales</div>
+              <div className="stat-label">
+                <BarChart3 size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Ingresos Totales
+              </div>
               <div className="stat-value">
                 ${monthData?.total_revenue?.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
               </div>
             </div>
 
-            <div className="stat-box">
-              <div className="stat-label">Ganancias Totales</div>
+            <div className="stat-box success">
+              <div className="stat-label">
+                <Zap size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Ganancias Totales
+              </div>
               <div className="stat-value highlight">
                 ${monthData?.total_profit?.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
               </div>
             </div>
 
             <div className="stat-box">
-              <div className="stat-label">Margen de Ganancia</div>
+              <div className="stat-label">
+                <Target size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Margen de Ganancia
+              </div>
               <div className="stat-value">{monthData?.margin}%</div>
             </div>
           </div>

@@ -17,6 +17,10 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Limit payload size
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
 // Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/sales', authMiddleware, salesRoutes);
@@ -26,15 +30,39 @@ app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'API está funcionando correctamente' });
+  res.json({
+    status: 'OK',
+    message: 'API está funcionando correctamente',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Manejo de errores
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Ruta no encontrada',
+    path: req.path
+  });
+});
+
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: 'Error interno del servidor' });
+  console.error('Error no manejado:', err);
+
+  // Errores de validación JSON
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      error: 'JSON inválido'
+    });
+  }
+
+  res.status(err.status || 500).json({
+    error: err.message || 'Error interno del servidor',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });
 
 app.listen(PORT, () => {
   console.log(`🍹 Backend corriendo en puerto ${PORT}`);
+  console.log(`Entorno: ${process.env.NODE_ENV || 'development'}`);
 });
