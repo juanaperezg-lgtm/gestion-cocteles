@@ -2,7 +2,7 @@
 -- Base de datos: PostgreSQL
 
 -- Tabla de usuarios
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE users (
 );
 
 -- Tabla de productos (cócteles, ingredientes, bebidas)
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   description TEXT,
@@ -27,7 +27,7 @@ CREATE TABLE products (
 );
 
 -- Tabla de ventas
-CREATE TABLE sales (
+CREATE TABLE IF NOT EXISTS sales (
   id SERIAL PRIMARY KEY,
   product_id INTEGER NOT NULL REFERENCES products(id),
   quantity DECIMAL(10, 2) NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE sales (
 );
 
 -- Tabla de compras de productos
-CREATE TABLE purchases (
+CREATE TABLE IF NOT EXISTS purchases (
   id SERIAL PRIMARY KEY,
   product_id INTEGER NOT NULL REFERENCES products(id),
   quantity DECIMAL(10, 2) NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE purchases (
 );
 
 -- Tabla de inventario (resumen de stock)
-CREATE TABLE inventory (
+CREATE TABLE IF NOT EXISTS inventory (
   id SERIAL PRIMARY KEY,
   product_id INTEGER NOT NULL UNIQUE REFERENCES products(id),
   total_stock DECIMAL(10, 2) NOT NULL DEFAULT 0,
@@ -63,7 +63,7 @@ CREATE TABLE inventory (
 );
 
 -- Índices para mejorar performance
-CREATE INDEX idx_sales_sale_date ON sales(sale_date);
-CREATE INDEX idx_sales_product_id ON sales(product_id);
-CREATE INDEX idx_purchases_purchase_date ON purchases(purchase_date);
-CREATE INDEX idx_purchases_product_id ON purchases(product_id);
+CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date);
+CREATE INDEX IF NOT EXISTS idx_sales_product_id ON sales(product_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_purchase_date ON purchases(purchase_date);
+CREATE INDEX IF NOT EXISTS idx_purchases_product_id ON purchases(product_id);
