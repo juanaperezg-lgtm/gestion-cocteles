@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { purchasesAPI, productsAPI } from '../services/api';
 import Navigation from '../components/Navigation';
+import { productsAPI, purchasesAPI } from '../services/api';
 import '../styles/Purchases.css';
 
 function Purchases() {
@@ -74,19 +74,13 @@ function Purchases() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
   if (loading) return <div className="loading">Cargando...</div>;
 
-  const [messageType, messageText] = message.split(':');
+  const [messageType, messageText] = message ? message.split(':') : ['', ''];
 
   return (
     <div className="purchases-page">
-      <Navigation onLogout={handleLogout} />
+      <Navigation />
 
       <div className="container">
         <h1>📦 Gestión de Compras</h1>

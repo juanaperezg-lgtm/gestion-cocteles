@@ -1,31 +1,25 @@
-import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  BarChart3,
-  ShoppingCart,
-  Package,
-  TrendingUp,
-  Warehouse,
-  FileText,
-  LogOut,
+    BarChart3,
+    FileText,
+    LogOut,
+    Package,
+    ShoppingCart,
+    TrendingUp,
+    Warehouse,
 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import '../styles/Navigation.css';
 
-function Navigation({ onLogout }) {
+function Navigation() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const { user, logout } = useAuth();
 
   const isActive = (path) => location.pathname === path;
 
   const handleLogout = () => {
-    // Limpiar localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-
-    // Llamar callback
-    onLogout();
-
-    // Redirigir al login
+    logout();
     navigate('/login', { replace: true });
   };
 
@@ -67,7 +61,7 @@ function Navigation({ onLogout }) {
         </ul>
 
         <div className="nav-right">
-          <span className="user-info">{user.full_name || user.username}</span>
+          <span className="user-info">{user?.full_name || user?.username}</span>
           <button onClick={handleLogout} className="logout-btn">
             <LogOut size={16} />
             Logout

@@ -1,54 +1,61 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Dashboard from './pages/Dashboard';
-import Sales from './pages/Sales';
+import Inventory from './pages/Inventory';
+import Login from './pages/Login';
 import Products from './pages/Products';
 import Purchases from './pages/Purchases';
-import Inventory from './pages/Inventory';
 import Reports from './pages/Reports';
+import Sales from './pages/Sales';
 import './styles/App.css';
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
+function AppRoutes() {
+  const { isAuthenticated, loading } = useAuth();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-  }, []);
+  if (loading) {
+    return <div className="loading">Cargando...</div>;
+  }
 
   return (
+    <Routes>
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/" /> : <Login />}
+      />
+      <Route
+        path="/"
+        element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/sales"
+        element={isAuthenticated ? <Sales /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/products"
+        element={isAuthenticated ? <Products /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/purchases"
+        element={isAuthenticated ? <Purchases /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/inventory"
+        element={isAuthenticated ? <Inventory /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/reports"
+        element={isAuthenticated ? <Reports /> : <Navigate to="/login" />}
+      />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
     <Router>
-      <Routes>
-        <Route
-          path="/login"
-          element={isAuthenticated ? <Navigate to="/" /> : <Login setIsAuthenticated={setIsAuthenticated} />}
-        />
-        <Route
-          path="/"
-          element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/sales"
-          element={isAuthenticated ? <Sales /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/products"
-          element={isAuthenticated ? <Products /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/purchases"
-          element={isAuthenticated ? <Purchases /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/inventory"
-          element={isAuthenticated ? <Inventory /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/reports"
-          element={isAuthenticated ? <Reports /> : <Navigate to="/login" />}
-        />
-      </Routes>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </Router>
   );
 }

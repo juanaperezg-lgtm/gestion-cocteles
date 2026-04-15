@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { salesAPI } from '../services/api';
 import Navigation from '../components/Navigation';
+import { salesAPI } from '../services/api';
 import '../styles/Reports.css';
 
 function Reports() {
@@ -45,12 +45,6 @@ function Reports() {
     });
 
     setFilteredSales(filtered);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
   };
 
   const calculateTotals = () => {
@@ -105,7 +99,7 @@ function Reports() {
 
   return (
     <div className="reports-page">
-      <Navigation onLogout={handleLogout} />
+      <Navigation />
 
       <div className="container">
         <h1>📊 Reportes de Ventas</h1>

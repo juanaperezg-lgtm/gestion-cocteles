@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { productsAPI } from '../services/api';
 import Navigation from '../components/Navigation';
+import { productsAPI } from '../services/api';
 import '../styles/Products.css';
 
 function Products() {
@@ -74,12 +74,6 @@ function Products() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
   const calculateMargin = (purchase, sale) => {
     if (!purchase || !sale) return 0;
     return (((sale - purchase) / purchase) * 100).toFixed(1);
@@ -91,7 +85,7 @@ function Products() {
 
   return (
     <div className="products-page">
-      <Navigation onLogout={handleLogout} />
+      <Navigation />
 
       <div className="container">
         <h1>🍹 Gestión de Productos</h1>

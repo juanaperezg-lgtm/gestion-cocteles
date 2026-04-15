@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { BarChart3, Target, TrendingUp, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, BarChart3, Target, Zap } from 'lucide-react';
-import { dashboardAPI } from '../services/api';
 import Navigation from '../components/Navigation';
+import { dashboardAPI } from '../services/api';
 import '../styles/Dashboard.css';
 
 function Dashboard() {
@@ -33,17 +33,11 @@ function Dashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
   if (loading) return <div className="loading">Cargando datos...</div>;
 
   return (
     <div className="dashboard">
-      <Navigation onLogout={handleLogout} />
+      <Navigation />
 
       <div className="container">
         <h1>📊 Dashboard</h1>

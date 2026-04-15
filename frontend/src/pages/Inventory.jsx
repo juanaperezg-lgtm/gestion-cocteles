@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { dashboardAPI } from '../services/api';
 import Navigation from '../components/Navigation';
+import { dashboardAPI } from '../services/api';
 import '../styles/Inventory.css';
 
 function Inventory() {
@@ -27,19 +27,13 @@ function Inventory() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
   if (loading) return <div className="loading">Cargando inventario...</div>;
 
   if (!inventory) return <div className="error">Error al cargar el inventario</div>;
 
   return (
     <div className="inventory-page">
-      <Navigation onLogout={handleLogout} />
+      <Navigation />
 
       <div className="container">
         <h1>📦 Estado del Inventario</h1>

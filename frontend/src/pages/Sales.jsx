@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { AlertCircle, CheckCircle, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, AlertCircle, CheckCircle } from 'lucide-react';
-import { salesAPI, productsAPI } from '../services/api';
 import Navigation from '../components/Navigation';
+import { productsAPI, salesAPI } from '../services/api';
 import '../styles/Sales.css';
 
 function Sales() {
@@ -74,19 +74,13 @@ function Sales() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
   if (loading) return <div className="loading">Cargando...</div>;
 
   const [messageType, messageText] = message ? message.split(':') : ['', ''];
 
   return (
     <div className="sales-page">
-      <Navigation onLogout={handleLogout} />
+      <Navigation />
 
       <div className="container">
         <h1>💰 Gestión de Ventas</h1>

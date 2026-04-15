@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
 import '../styles/Login.css';
 
-function Login({ setIsAuthenticated }) {
+function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -12,6 +13,7 @@ function Login({ setIsAuthenticated }) {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,9 +22,7 @@ function Login({ setIsAuthenticated }) {
 
     try {
       const response = await authAPI.login(username, password);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      setIsAuthenticated(true);
+      login(response.data.token, response.data.user);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión');
