@@ -179,7 +179,8 @@
 
 .summary-label {
   font-size: 0.7rem;
-  opacity: 0.9;
+  opacity: 1;
+  color: #ffffff;
   margin-bottom: var(--spacing-md);
   text-transform: uppercase;
   letter-spacing: 0.5px;

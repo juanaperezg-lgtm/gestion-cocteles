@@ -1,8 +1,13 @@
-const { Client } = require('pg');
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import { Client } from 'pg';
 
-require('dotenv').config();
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL,

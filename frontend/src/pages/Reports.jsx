@@ -37,60 +37,68 @@ function Reports() {
       return;
     }
 
-    const filtered = sales.filter((sale) => {
-      const saleDate = new Date(sale.sale_date);
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      return saleDate >= start && saleDate <= end;
-    });
+    const filtered = sales.filter((sale) => sale.sale_date >= startDate && sale.sale_date <= endDate);
 
     setFilteredSales(filtered);
   };
 
+  const toNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
   const calculateTotals = () => {
+    const totalRevenue = filteredSales.reduce((sum, sale) => sum + toNumber(sale.total_amount), 0);
+
     return {
       totalSales: filteredSales.length,
-      totalRevenue: filteredSales.reduce((sum, sale) => sum + sale.total_amount, 0),
-      averagePerSale: filteredSales.length > 0
-        ? (filteredSales.reduce((sum, sale) => sum + sale.total_amount, 0) / filteredSales.length)
-        : 0,
+      totalRevenue,
+      averagePerSale: filteredSales.length > 0 ? (totalRevenue / filteredSales.length) : 0,
     };
+  };
+
+  const escapeCSVValue = (value) => {
+    const safeValue = value === null || value === undefined ? '' : String(value);
+    return `"${safeValue.replace(/"/g, '""')}"`;
   };
 
   const downloadCSV = () => {
     const totals = calculateTotals();
     const headers = ['Producto', 'Cantidad', 'Precio Unitario', 'Total', 'Fecha', 'Hora'];
-    const rows = filteredSales.map((sale) => [
+    const rows = filteredSales.map((sale) => ([
       sale.product_name,
-      sale.quantity,
-      sale.unit_price,
-      sale.total_amount,
+      toNumber(sale.quantity),
+      toNumber(sale.unit_price).toFixed(2),
+      toNumber(sale.total_amount).toFixed(2),
       sale.sale_date,
       sale.sale_time,
-    ]);
+    ]));
 
-    const csvContent = [
+    const csvLines = [
       ['Reporte de Ventas'],
-      ['Período', `${startDate || 'Todas'} - ${endDate || 'Todas'}`],
-      ['Fecha de generación', new Date().toLocaleString('es-AR')],
+      ['Periodo', `${startDate || 'Todas'} - ${endDate || 'Todas'}`],
+      ['Fecha de generacion', new Date().toLocaleString('es-AR')],
       [],
       ['RESUMEN'],
       ['Total de Ventas', totals.totalSales],
-      ['Ingresos Totales', `$${totals.totalRevenue.toFixed(2)}`],
-      ['Promedio por Venta', `$${totals.averagePerSale.toFixed(2)}`],
+      ['Ingresos Totales', totals.totalRevenue.toFixed(2)],
+      ['Promedio por Venta', totals.averagePerSale.toFixed(2)],
       [],
-      [headers.join(',')],
-      ...rows.map((row) => row.join(',')),
-    ]
-      .map((row) => (Array.isArray(row) ? row.join(',') : row))
-      .join('\n');
+      headers,
+      ...rows,
+    ].map((row) => row.map(escapeCSVValue).join(','));
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const csvContent = `\uFEFF${csvLines.join('\n')}`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `reporte_ventas_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   if (loading) return <div className="loading">Cargando reportes...</div>;
@@ -126,11 +134,11 @@ function Reports() {
               />
             </div>
 
-            <button onClick={handleFilter} className="filter-btn">
+            <button type="button" onClick={handleFilter} className="filter-btn">
               Filtrar
             </button>
 
-            <button onClick={() => {
+            <button type="button" onClick={() => {
               setStartDate('');
               setEndDate('');
               setFilteredSales(sales);
@@ -138,7 +146,7 @@ function Reports() {
               Limpiar Filtro
             </button>
 
-            <button onClick={downloadCSV} className="download-btn">
+            <button type="button" onClick={downloadCSV} className="download-btn">
               📥 Descargar CSV
             </button>
           </div>
@@ -184,10 +192,10 @@ function Reports() {
                     {filteredSales.map((sale) => (
                       <tr key={sale.id}>
                         <td>{sale.product_name}</td>
-                        <td>{sale.quantity}</td>
-                        <td>${sale.unit_price.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
+                        <td>{toNumber(sale.quantity)}</td>
+                        <td>${toNumber(sale.unit_price).toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
                         <td className="total">
-                          ${sale.total_amount.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                          ${toNumber(sale.total_amount).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
                         </td>
                         <td>{sale.sale_date}</td>
                         <td>{sale.sale_time}</td>

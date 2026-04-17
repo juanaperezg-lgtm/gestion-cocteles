@@ -18,8 +18,6 @@ function Purchases() {
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -61,7 +59,6 @@ function Purchases() {
         ...formData,
         quantity: parseFloat(formData.quantity),
         unit_cost: parseFloat(formData.unit_cost),
-        user_id: user.id,
       });
 
       setMessage('success:Compra registrada exitosamente');

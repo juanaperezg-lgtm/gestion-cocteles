@@ -114,24 +114,24 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="stat-box success">
-              <div className="stat-label">
-                <Zap size={20} style={{ display: 'inline', marginRight: '8px' }} />
-                Ganancias Totales
+              <div className="stat-box success">
+                <div className="stat-label">
+                  <Zap size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                  Ganancia Total (Bruta)
+                </div>
+                <div className="stat-value highlight">
+                  ${(monthData?.gross_earnings ?? monthData?.total_revenue ?? 0).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                </div>
               </div>
-              <div className="stat-value highlight">
-                ${monthData?.total_profit?.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
-              </div>
-            </div>
 
-            <div className="stat-box">
-              <div className="stat-label">
-                <Target size={20} style={{ display: 'inline', marginRight: '8px' }} />
-                Margen de Ganancia
+              <div className="stat-box">
+                <div className="stat-label">
+                  <Target size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                  Cantidad de Ventas
+                </div>
+                <div className="stat-value">{monthData?.sales_count ?? 0}</div>
               </div>
-              <div className="stat-value">{monthData?.margin}%</div>
             </div>
-          </div>
 
           {monthData?.top_products?.length > 0 && (
             <div className="products-section">

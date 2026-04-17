@@ -18,8 +18,6 @@ function Sales() {
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -61,7 +59,6 @@ function Sales() {
         ...formData,
         quantity: parseFloat(formData.quantity),
         unit_price: parseFloat(formData.unit_price),
-        user_id: user.id,
       });
 
       setMessage('success:Venta registrada exitosamente');

@@ -8,7 +8,7 @@
   border-bottom: 2px solid var(--primary-600);
   position: sticky;
   top: 0;
-  z-index: var(--z-sticky);
+  z-index: 14000;
   width: 100%;
 }
 
@@ -38,8 +38,9 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-xl);
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -80,6 +81,7 @@
   align-items: center;
   gap: var(--spacing-md);
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .user-info {
@@ -130,6 +132,10 @@
   flex-shrink: 0;
 }
 
+.drawer-close-btn {
+  display: none;
+}
+
 .menu-overlay,
 .mobile-drawer {
   display: none;
@@ -165,6 +171,20 @@
   }
 }
 
+@media (max-width: 1360px) and (min-width: 1201px) {
+  .desktop-nav-menu {
+    gap: var(--spacing-sm);
+  }
+
+  .desktop-nav-menu a {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .nav-right .user-info {
+    display: none;
+  }
+}
+
 @media (max-width: 992px) {
   .nav-brand h2 {
     font-size: 1.2rem;
@@ -193,7 +213,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1360px) {
   .desktop-nav-menu,
   .nav-right {
     display: none;
@@ -214,7 +234,7 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    z-index: 2100;
+    z-index: 14100;
   }
 
   .menu-overlay {
@@ -229,7 +249,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    z-index: 1990;
+    z-index: 12000;
   }
 
   .menu-overlay.open {
@@ -250,8 +270,9 @@
     box-shadow: -20px 0 44px rgba(17, 24, 39, 0.18);
     transform: translateX(100%);
     transition: transform 0.26s ease;
-    z-index: 2000;
+    z-index: 13000;
     pointer-events: none;
+    overflow: visible;
   }
 
   .mobile-drawer.open {
@@ -259,12 +280,34 @@
     pointer-events: auto;
   }
 
+  .drawer-close-btn {
+    display: inline-flex;
+    position: absolute;
+    top: 12px;
+    left: -20px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--neutral-700);
+    box-shadow: var(--shadow-md);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 13010;
+  }
+
+  .drawer-close-btn:hover {
+    background: var(--neutral-100);
+  }
+
   .mobile-nav-menu {
     display: flex;
     flex-direction: column;
     list-style: none;
     margin: 0;
-    padding: var(--spacing-sm) 0 0;
+    padding: 3.25rem 0 0;
     flex: 1;
     overflow-y: auto;
   }

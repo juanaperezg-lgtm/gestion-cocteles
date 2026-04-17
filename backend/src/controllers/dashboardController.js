@@ -2,18 +2,17 @@ import pool from '../config/database.js';
 
 export const getDashboardToday = async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const todayResult = await pool.query(`SELECT TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') as today`);
+    const today = todayResult.rows[0].today;
 
     // Total ventas hoy
     const totalSales = await pool.query(
-      `SELECT COALESCE(SUM(total_amount), 0) as total FROM sales WHERE sale_date = $1`,
-      [today]
+      `SELECT COALESCE(SUM(total_amount), 0) as total FROM sales WHERE sale_date = CURRENT_DATE`
     );
 
     // Cantidad de ventas hoy
     const salesCount = await pool.query(
-      `SELECT COUNT(*) as count FROM sales WHERE sale_date = $1`,
-      [today]
+      `SELECT COUNT(*) as count FROM sales WHERE sale_date = CURRENT_DATE`
     );
 
     // Productos más vendidos hoy
@@ -21,17 +20,16 @@ export const getDashboardToday = async (req, res) => {
       `SELECT p.name, SUM(s.quantity) as quantity_sold, SUM(s.total_amount) as revenue
        FROM sales s
        JOIN products p ON s.product_id = p.id
-       WHERE s.sale_date = $1
+       WHERE s.sale_date = CURRENT_DATE
        GROUP BY p.id, p.name
        ORDER BY revenue DESC
-       LIMIT 5`,
-      [today]
+       LIMIT 5`
     );
 
     res.json({
       date: today,
       total_sales: parseFloat(totalSales.rows[0].total),
-      sales_count: parseInt(salesCount.rows[0].count),
+      sales_count: parseInt(salesCount.rows[0].count, 10),
       top_products: topProducts.rows,
     });
   } catch (error) {
@@ -42,27 +40,17 @@ export const getDashboardToday = async (req, res) => {
 
 export const getDashboardMonth = async (req, res) => {
   try {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const monthStr = `${year}-${month}`;
+    const monthResult = await pool.query(`SELECT TO_CHAR(CURRENT_DATE, 'YYYY-MM') as month_str`);
+    const monthStr = monthResult.rows[0].month_str;
 
-    // Total ventas mes
-    const totalSales = await pool.query(
-      `SELECT COALESCE(SUM(total_amount), 0) as total FROM sales
-       WHERE TO_CHAR(sale_date, 'YYYY-MM') = $1`,
-      [monthStr]
-    );
-
-    // Ganancias (ventas - costo)
-    const profitData = await pool.query(
+    // Total vendido del mes (ganancia bruta)
+    const revenueData = await pool.query(
       `SELECT
-        COALESCE(SUM(s.total_amount), 0) as total_revenue,
-        COALESCE(SUM(s.quantity * (p.sale_price - p.purchase_price)), 0) as total_profit
-       FROM sales s
-       JOIN products p ON s.product_id = p.id
-       WHERE TO_CHAR(s.sale_date, 'YYYY-MM') = $1`,
-      [monthStr]
+         COALESCE(SUM(total_amount), 0) as total_revenue,
+         COUNT(*) as sales_count
+       FROM sales
+       WHERE sale_date >= DATE_TRUNC('month', CURRENT_DATE)::date
+         AND sale_date < (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month')::date`
     );
 
     // Productos más vendidos mes
@@ -70,20 +58,22 @@ export const getDashboardMonth = async (req, res) => {
       `SELECT p.name, SUM(s.quantity) as quantity_sold, SUM(s.total_amount) as revenue
        FROM sales s
        JOIN products p ON s.product_id = p.id
-       WHERE TO_CHAR(s.sale_date, 'YYYY-MM') = $1
+       WHERE s.sale_date >= DATE_TRUNC('month', CURRENT_DATE)::date
+         AND s.sale_date < (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month')::date
        GROUP BY p.id, p.name
        ORDER BY revenue DESC
-       LIMIT 10`,
-      [monthStr]
+       LIMIT 10`
     );
 
-    const profit = profitData.rows[0];
+    const revenue = revenueData.rows[0];
+    const totalRevenue = parseFloat(revenue.total_revenue);
 
     res.json({
       month: monthStr,
-      total_revenue: parseFloat(profit.total_revenue),
-      total_profit: parseFloat(profit.total_profit),
-      margin: profit.total_revenue > 0 ? ((profit.total_profit / profit.total_revenue) * 100).toFixed(2) : 0,
+      total_revenue: totalRevenue,
+      gross_earnings: totalRevenue,
+      total_profit: totalRevenue, // Compatibilidad temporal con frontend existente
+      sales_count: parseInt(revenue.sales_count, 10),
       top_products: topProducts.rows,
     });
   } catch (error) {

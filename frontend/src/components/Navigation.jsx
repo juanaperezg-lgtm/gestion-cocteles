@@ -26,7 +26,7 @@ function Navigation() {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 768) {
+      if (window.innerWidth > 1360) {
         setIsMenuOpen(false);
       }
     };
@@ -36,10 +36,19 @@ function Navigation() {
   }, []);
 
   useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+
     if (!isMenuOpen) {
-      document.body.style.overflow = '';
+      body.style.overflow = '';
+      body.style.position = '';
+      body.style.top = '';
+      body.style.width = '';
+      root.style.overflow = '';
       return undefined;
     }
+
+    const scrollY = window.scrollY;
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -47,11 +56,28 @@ function Navigation() {
       }
     };
 
-    document.body.style.overflow = 'hidden';
+    root.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = '';
+      const topOffset = body.style.top;
+      const lastScrollY = topOffset ? Math.abs(parseInt(topOffset, 10)) : 0;
+
+      root.style.overflow = '';
+      body.style.overflow = '';
+      body.style.position = '';
+      body.style.top = '';
+      body.style.width = '';
+
+      if (!Number.isNaN(lastScrollY) && lastScrollY > 0) {
+        window.scrollTo(0, lastScrollY);
+      }
+
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isMenuOpen]);
@@ -126,7 +152,7 @@ function Navigation() {
             aria-expanded={isMenuOpen}
             aria-controls="mobile-drawer"
           >
-            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            <Menu size={28} />
           </button>
         </div>
       </nav>
@@ -142,6 +168,15 @@ function Navigation() {
         className={`mobile-drawer ${isMenuOpen ? 'open' : ''}`}
         aria-hidden={!isMenuOpen}
       >
+        <button
+          type="button"
+          className="drawer-close-btn"
+          onClick={() => setIsMenuOpen(false)}
+          aria-label="Cerrar menu"
+        >
+          <X size={20} />
+        </button>
+
         <ul className="mobile-nav-menu">
           {renderNavItems('mobile')}
         </ul>

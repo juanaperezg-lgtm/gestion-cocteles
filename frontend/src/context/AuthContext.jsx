@@ -2,6 +2,19 @@ import { createContext, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext();
 
+const getStoredUser = () => {
+  const userData = localStorage.getItem('user');
+  if (!userData) return null;
+
+  try {
+    return JSON.parse(userData);
+  } catch {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    return null;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -9,11 +22,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
+    const parsedUser = getStoredUser();
     
-    if (token && userData) {
+    if (token && parsedUser) {
       setIsAuthenticated(true);
-      setUser(JSON.parse(userData));
+      setUser(parsedUser);
     }
     setLoading(false);
   }, []);
