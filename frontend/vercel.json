@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://TU-BACKEND.onrender.com/api/$1"
-    }
+      "destination": "https://gestion-cocteles-1.onrender.com/"
+    } 
   ]
 }
