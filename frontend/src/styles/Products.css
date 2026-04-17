@@ -1,6 +1,8 @@
 .products-page {
   min-height: 100vh;
   background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .products-page h1 {
@@ -231,7 +233,7 @@
   font-weight: 700;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .products-content {
     grid-template-columns: 1fr;
   }
@@ -239,6 +241,41 @@
   .form-section {
     position: relative;
     top: 0;
+  }
+
+  .products-page h1 {
+    font-size: 2rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .products-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .form-section {
+    position: relative;
+    top: 0;
+  }
+
+  .products-table {
+    font-size: 0.9rem;
+  }
+
+  .products-table th,
+  .products-table td {
+    padding: var(--spacing-md);
+  }
+
+  .products-page h1 {
+    font-size: 1.75rem;
   }
 }
 
@@ -253,7 +290,7 @@
 
   .products-table th,
   .products-table td {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 
   .product-name {
@@ -261,6 +298,115 @@
   }
 
   .products-page h1 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+  }
+
+  .form-section {
+    padding: var(--spacing-lg);
+  }
+
+  .form-section h2 {
+    font-size: 1.1rem;
+  }
+
+  .products-list-section h2 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .products-page h1 {
+    font-size: 1.25rem;
+  }
+
+  .form-section {
+    padding: var(--spacing-md);
+  }
+
+  .form-section h2 {
+    font-size: 1rem;
+  }
+
+  .form-group label {
+    font-size: 0.75rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 0.85rem;
+    padding: var(--spacing-sm);
+  }
+
+  .products-table-wrapper {
+    overflow-x: scroll;
+  }
+
+  .products-table {
+    font-size: 0.75rem;
+  }
+
+  .products-table th,
+  .products-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .product-name {
+    min-width: 80px;
+  }
+
+  .product-name .desc {
+    font-size: 0.65rem;
+  }
+
+  .submit-btn {
+    font-size: 0.85rem;
+    padding: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .products-page h1 {
+    font-size: 1.1rem;
+  }
+
+  .form-section {
+    padding: var(--spacing-sm);
+  }
+
+  .form-section h2 {
+    font-size: 0.9rem;
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-group label {
+    font-size: 0.7rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 0.8rem;
+    padding: var(--spacing-xs);
+  }
+
+  .products-list-section h2 {
+    font-size: 1rem;
+  }
+
+  .products-table {
+    font-size: 0.7rem;
+  }
+
+  .products-table th,
+  .products-table td {
+    padding: var(--spacing-xs);
+  }
+
+  .submit-btn {
+    font-size: 0.8rem;
   }
 }

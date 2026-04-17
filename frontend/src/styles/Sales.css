@@ -1,6 +1,8 @@
 .sales-page {
   min-height: 100vh;
   background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .sales-page h1 {
@@ -248,6 +250,22 @@
   color: var(--success-600);
 }
 
+@media (max-width: 1200px) {
+  .sales-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .form-section {
+    position: relative;
+    top: 0;
+  }
+
+  .sales-page h1 {
+    font-size: 2rem;
+  }
+}
+
 @media (max-width: 1024px) {
   .sales-content {
     grid-template-columns: 1fr;
@@ -256,6 +274,19 @@
   .form-section {
     position: relative;
     top: 0;
+  }
+
+  .sales-table {
+    font-size: 0.9rem;
+  }
+
+  .sales-table th,
+  .sales-table td {
+    padding: var(--spacing-md);
+  }
+
+  .sales-page h1 {
+    font-size: 1.75rem;
   }
 }
 
@@ -274,19 +305,94 @@
   }
 
   .sales-page h1 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 
-  .form-section,
-  .sales-list-section {
-    border-radius: var(--radius-lg);
+  .form-section {
+    padding: var(--spacing-lg);
+  }
+
+  .form-section h2 {
+    font-size: 1.1rem;
+  }
+
+  .sales-list-section h2 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .sales-page h1 {
+    font-size: 1.25rem;
+  }
+
+  .form-section {
+    padding: var(--spacing-md);
+  }
+
+  .form-section h2 {
+    font-size: 1rem;
+  }
+
+  .form-group label {
+    font-size: 0.75rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 0.85rem;
+    padding: var(--spacing-sm);
+  }
+
+  .sales-table-wrapper {
+    overflow-x: scroll;
+  }
+
+  .sales-table {
+    font-size: 0.75rem;
+  }
+
+  .sales-table th,
+  .sales-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 }
 
 @media (max-width: 480px) {
+  .sales-page h1 {
+    font-size: 1.1rem;
+  }
+
+  .form-section {
+    padding: var(--spacing-sm);
+  }
+
+  .form-section h2 {
+    font-size: 0.9rem;
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
   .form-group input,
   .form-group select,
   .form-group textarea {
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px;
+    padding: var(--spacing-xs);
+  }
+
+  .sales-list-section h2 {
+    font-size: 1rem;
+  }
+
+  .sales-table {
+    font-size: 0.7rem;
+  }
+
+  .sales-table th,
+  .sales-table td {
+    padding: var(--spacing-xs);
   }
 }

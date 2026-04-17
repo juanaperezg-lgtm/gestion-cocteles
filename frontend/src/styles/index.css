@@ -98,6 +98,8 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
@@ -107,10 +109,16 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 #root {
   min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* ========== TYPOGRAPHY ========== */
@@ -559,13 +567,78 @@ tbody tr:last-child td {
 }
 
 /* ========== RESPONSIVE ========== */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .grid {
+    gap: var(--spacing-lg);
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 0.9rem;
+  }
+
+  table {
+    font-size: 0.9rem;
+  }
+
+  th,
+  td {
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 1024px) {
   h1 {
     font-size: 1.875rem;
   }
 
   h2 {
+    font-size: 1.375rem;
+  }
+
+  .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-box {
+    min-height: 140px;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+
+  table {
+    font-size: 0.85rem;
+  }
+
+  th,
+  td {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+@media (max-width: 768px) {
+  h1 {
     font-size: 1.5rem;
+    gap: var(--spacing-sm);
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  h3 {
+    font-size: 1.1rem;
   }
 
   .container {
@@ -574,6 +647,7 @@ tbody tr:last-child td {
 
   .grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
 
   .grid-2 {
@@ -584,39 +658,191 @@ tbody tr:last-child td {
     grid-template-columns: 1fr;
   }
 
+  .stat-box {
+    min-height: 120px;
+    padding: var(--spacing-lg);
+  }
+
   .stat-value {
-    font-size: 1.875rem;
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
   }
 
   .form-row {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 0.9rem;
+    padding: var(--spacing-sm);
   }
 
   table {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
+    overflow-x: auto;
   }
 
   th,
   td {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-sm);
+  }
+
+  .card {
+    padding: var(--spacing-lg);
+  }
+
+  .alert {
+    font-size: 0.85rem;
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.25rem;
+  }
+
+  h2 {
+    font-size: 1.1rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+
+  .container {
+    padding: var(--spacing-sm);
+  }
+
+  .stat-box {
+    min-height: 100px;
+    padding: var(--spacing-md);
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 0.85rem;
+    padding: var(--spacing-xs);
+  }
+
+  table {
+    font-size: 0.75rem;
+  }
+
+  th,
+  td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .card {
+    padding: var(--spacing-md);
+  }
+
+  .alert {
+    font-size: 0.8rem;
+    padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
+  }
+
+  button {
+    width: 100%;
+    padding: var(--spacing-sm);
+    font-size: 0.85rem;
+  }
+
+  .form-group label {
+    font-size: 0.75rem;
   }
 }
 
 @media (max-width: 480px) {
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
+  }
+
+  h2 {
+    font-size: 0.95rem;
+  }
+
+  h3 {
+    font-size: 0.9rem;
+  }
+
+  .container {
+    padding: var(--spacing-xs);
   }
 
   .stat-box {
-    min-height: 120px;
+    min-height: 90px;
+    padding: var(--spacing-sm);
   }
 
   .stat-value {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+    padding: var(--spacing-xs);
+  }
+
+  textarea {
+    min-height: 100px;
+  }
+
+  table {
+    font-size: 0.7rem;
+  }
+
+  th,
+  td {
+    padding: var(--spacing-xs);
+  }
+
+  .card {
+    padding: var(--spacing-sm);
+  }
+
+  .alert {
+    font-size: 0.75rem;
+    padding: var(--spacing-xs);
+    flex-direction: column;
   }
 
   button {
     width: 100%;
-    justify-content: center;
+    padding: var(--spacing-xs);
+    font-size: 0.8rem;
+  }
+
+  .form-group label {
+    font-size: 0.7rem;
+  }
+
+  .empty-message {
+    padding: var(--spacing-lg) var(--spacing-md);
+    font-size: 0.85rem;
   }
 }

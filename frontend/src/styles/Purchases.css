@@ -1,6 +1,8 @@
 .purchases-page {
   min-height: 100vh;
   background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .purchases-page h1 {
@@ -219,6 +221,22 @@
   color: var(--success-600);
 }
 
+@media (max-width: 1200px) {
+  .purchases-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .form-section {
+    position: relative;
+    top: 0;
+  }
+
+  .purchases-page h1 {
+    font-size: 2rem;
+  }
+}
+
 @media (max-width: 1024px) {
   .purchases-content {
     grid-template-columns: 1fr;
@@ -227,6 +245,19 @@
   .form-section {
     position: relative;
     top: 0;
+  }
+
+  .purchases-table {
+    font-size: 0.9rem;
+  }
+
+  .purchases-table th,
+  .purchases-table td {
+    padding: var(--spacing-md);
+  }
+
+  .purchases-page h1 {
+    font-size: 1.75rem;
   }
 }
 
@@ -241,10 +272,98 @@
 
   .purchases-table th,
   .purchases-table td {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 
   .purchases-page h1 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+  }
+
+  .form-section {
+    padding: var(--spacing-lg);
+  }
+
+  .form-section h2 {
+    font-size: 1.1rem;
+  }
+
+  .purchases-list-section h2 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .purchases-page h1 {
+    font-size: 1.25rem;
+  }
+
+  .form-section {
+    padding: var(--spacing-md);
+  }
+
+  .form-section h2 {
+    font-size: 1rem;
+  }
+
+  .form-group label {
+    font-size: 0.75rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 0.85rem;
+    padding: var(--spacing-sm);
+  }
+
+  .purchases-table-wrapper {
+    overflow-x: scroll;
+  }
+
+  .purchases-table {
+    font-size: 0.75rem;
+  }
+
+  .purchases-table th,
+  .purchases-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .purchases-page h1 {
+    font-size: 1.1rem;
+  }
+
+  .form-section {
+    padding: var(--spacing-sm);
+  }
+
+  .form-section h2 {
+    font-size: 0.9rem;
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 16px;
+    padding: var(--spacing-xs);
+  }
+
+  .purchases-list-section h2 {
+    font-size: 1rem;
+  }
+
+  .purchases-table {
+    font-size: 0.7rem;
+  }
+
+  .purchases-table th,
+  .purchases-table td {
+    padding: var(--spacing-xs);
   }
 }

@@ -1,6 +1,8 @@
 .dashboard {
   min-height: 100vh;
   background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .loading {
@@ -182,34 +184,167 @@
   border-bottom: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .stat-box {
     min-height: 140px;
+    padding: var(--spacing-lg);
   }
 
   .stat-value {
+    font-size: 2.2rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+  }
+
+  .dashboard h1 {
     font-size: 2rem;
+    gap: var(--spacing-sm);
+  }
+
+  .stats-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .products-section th,
+  .products-section td {
+    padding: var(--spacing-md) var(--spacing-md);
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .stat-box {
+    min-height: 120px;
+    padding: var(--spacing-md);
+  }
+
+  .stat-value {
+    font-size: 1.8rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    margin-bottom: var(--spacing-sm);
   }
 
   .grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
 
   .dashboard h1 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-lg);
   }
 
   .stats-section h2 {
     font-size: 1.25rem;
+    padding-bottom: var(--spacing-sm);
   }
 
   .products-section {
     overflow-x: auto;
+    padding: var(--spacing-md);
+  }
+
+  .products-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-md);
   }
 
   .products-section th,
   .products-section td {
     padding: var(--spacing-sm) var(--spacing-md);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+  }
+
+  .products-section table {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .stat-box {
+    min-height: 100px;
+    padding: var(--spacing-sm);
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .dashboard h1 {
+    font-size: 1.25rem;
+  }
+
+  .stats-section h2 {
+    font-size: 1.1rem;
+  }
+
+  .stats-section {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .products-section {
+    padding: var(--spacing-sm);
+  }
+
+  .products-section h3 {
+    font-size: 1rem;
+  }
+
+  .products-section th,
+  .products-section td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-box {
+    min-height: 90px;
+    padding: var(--spacing-xs);
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.55rem;
+  }
+
+  .loading {
+    font-size: 1rem;
+  }
+
+  .dashboard h1 {
+    font-size: 1.1rem;
+  }
+
+  .stats-section h2 {
+    font-size: 1rem;
+  }
+
+  .products-section {
+    overflow-x: scroll;
+  }
+
+  .products-section th,
+  .products-section td {
+    padding: var(--spacing-xs);
+    font-size: 0.7rem;
   }
 }

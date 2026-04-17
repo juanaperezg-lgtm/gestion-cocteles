@@ -1,6 +1,8 @@
 .inventory-page {
   min-height: 100vh;
   background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .inventory-page h1 {
@@ -167,9 +169,44 @@
   color: var(--error-600);
 }
 
+@media (max-width: 1200px) {
+  .inventory-summary {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+  }
+
+  .inventory-page h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .inventory-summary {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .inventory-table {
+    font-size: 0.9rem;
+  }
+
+  .inventory-table th,
+  .inventory-table td {
+    padding: var(--spacing-md);
+  }
+
+  .inventory-page h1 {
+    font-size: 1.75rem;
+  }
+}
+
 @media (max-width: 768px) {
   .inventory-summary {
     grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .summary-card {
+    padding: var(--spacing-lg);
   }
 
   .inventory-table {
@@ -178,7 +215,7 @@
 
   .inventory-table th,
   .inventory-table td {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 
   .inventory-table td.product-name {
@@ -186,12 +223,71 @@
   }
 
   .inventory-page h1 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .inventory-summary {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .summary-card {
+    padding: var(--spacing-md);
+  }
+
+  .summary-label {
+    font-size: 0.7rem;
+  }
+
+  .summary-value {
+    font-size: 1.5rem;
+  }
+
+  .inventory-table {
+    font-size: 0.75rem;
+  }
+
+  .inventory-table th,
+  .inventory-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .inventory-page h1 {
+    font-size: 1.25rem;
   }
 }
 
 @media (max-width: 480px) {
   .inventory-summary {
     grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .summary-card {
+    padding: var(--spacing-sm);
+  }
+
+  .summary-label {
+    font-size: 0.65rem;
+  }
+
+  .summary-value {
+    font-size: 1.25rem;
+  }
+
+  .inventory-table {
+    font-size: 0.7rem;
+    overflow-x: scroll;
+  }
+
+  .inventory-table th,
+  .inventory-table td {
+    padding: var(--spacing-xs);
+  }
+
+  .inventory-page h1 {
+    font-size: 1.1rem;
   }
 }
