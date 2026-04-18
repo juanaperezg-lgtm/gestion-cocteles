@@ -12,6 +12,7 @@ function Products() {
     description: '',
     purchase_price: '',
     sale_price: '',
+    stock_quantity: '',
     category: 'cocktail',
     unit: 'unit',
   });
@@ -55,6 +56,7 @@ function Products() {
         ...formData,
         purchase_price: parseFloat(formData.purchase_price),
         sale_price: parseFloat(formData.sale_price),
+        stock_quantity: formData.stock_quantity === '' ? 0 : parseFloat(formData.stock_quantity),
       });
 
       setMessage('success:Producto creado exitosamente');
@@ -63,6 +65,7 @@ function Products() {
         description: '',
         purchase_price: '',
         sale_price: '',
+        stock_quantity: '',
         category: 'cocktail',
         unit: 'unit',
       });
@@ -143,6 +146,19 @@ function Products() {
                     value={formData.sale_price}
                     onChange={handleChange}
                     required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Stock Inicial (unidades)</label>
+                  <input
+                    type="number"
+                    name="stock_quantity"
+                    step="0.01"
+                    min="0"
+                    value={formData.stock_quantity}
+                    onChange={handleChange}
+                    placeholder="0"
                   />
                 </div>
               </div>

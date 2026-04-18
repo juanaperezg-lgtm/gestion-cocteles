@@ -12,15 +12,31 @@ export const getAllProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const { name, description, purchase_price, sale_price, category, unit } = req.body;
+    const { name, description, purchase_price, sale_price, stock_quantity, category, unit } = req.body;
+    const purchasePriceNumber = Number(purchase_price);
+    const salePriceNumber = Number(sale_price);
+    const stockQuantityNumber = stock_quantity === '' || stock_quantity == null ? 0 : Number(stock_quantity);
 
     if (!name || !purchase_price || !sale_price) {
       return res.status(400).json({ error: 'Campos requeridos: name, purchase_price, sale_price' });
     }
 
+    if (
+      Number.isNaN(purchasePriceNumber) ||
+      Number.isNaN(salePriceNumber) ||
+      Number.isNaN(stockQuantityNumber) ||
+      purchasePriceNumber < 0 ||
+      salePriceNumber < 0 ||
+      stockQuantityNumber < 0
+    ) {
+      return res.status(400).json({ error: 'Precios y stock deben ser números válidos mayores o iguales a 0' });
+    }
+
     const result = await pool.query(
-      'INSERT INTO products (name, description, purchase_price, sale_price, category, unit) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [name, description, purchase_price, sale_price, category, unit]
+      `INSERT INTO products (name, description, purchase_price, sale_price, stock_quantity, category, unit)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [name, description, purchasePriceNumber, salePriceNumber, stockQuantityNumber, category, unit]
     );
 
     res.status(201).json(result.rows[0]);
