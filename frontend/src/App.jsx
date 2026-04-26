@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Dashboard from './pages/Dashboard';
@@ -7,10 +8,17 @@ import Products from './pages/Products';
 import Purchases from './pages/Purchases';
 import Reports from './pages/Reports';
 import Sales from './pages/Sales';
+import { warmupAppCache } from './services/api';
 import './styles/App.css';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      warmupAppCache();
+    }
+  }, [isAuthenticated]);
 
   if (loading) {
     return <div className="loading">Cargando...</div>;

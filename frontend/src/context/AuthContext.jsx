@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { clearApiCache } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -34,6 +35,7 @@ export const AuthProvider = ({ children }) => {
   const login = (token, userData) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
+    clearApiCache();
     setIsAuthenticated(true);
     setUser(userData);
   };
@@ -41,6 +43,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    clearApiCache();
     setIsAuthenticated(false);
     setUser(null);
   };
