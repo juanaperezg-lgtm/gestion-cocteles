@@ -176,6 +176,78 @@
   border-left: 4px solid var(--error-500);
 }
 
+.consumables-list {
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm);
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--neutral-50);
+}
+
+.empty-consumables {
+  margin: 0;
+  color: var(--neutral-600);
+  font-size: 0.9rem;
+  padding: var(--spacing-sm);
+}
+
+.consumable-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.consumable-item:last-child {
+  border-bottom: none;
+}
+
+.consumable-check {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: 500;
+  color: var(--neutral-800);
+}
+
+.consumable-check input {
+  width: auto;
+}
+
+.consumable-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.consumable-controls input {
+  width: 90px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.consumable-stock {
+  font-size: 0.8rem;
+  color: var(--neutral-600);
+  white-space: nowrap;
+}
+
+.consumable-stock.low {
+  color: var(--error-600);
+  font-weight: 700;
+}
+
+.template-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.9rem;
+  color: var(--neutral-700);
+  margin-bottom: var(--spacing-lg);
+}
+
 .sales-list-section {
   background: var(--bg-primary);
   padding: var(--spacing-xl);
@@ -293,6 +365,16 @@
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .consumable-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .consumable-controls {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .sales-table {

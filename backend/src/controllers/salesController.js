@@ -1,10 +1,19 @@
 import pool from '../config/database.js';
+import { ensureInventorySchema } from '../utils/inventorySchema.js';
+
+const parsePositiveNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
 
 export const createSale = async (req, res) => {
   const client = await pool.connect();
+  let transactionStarted = false;
 
   try {
-    const { product_id, quantity, unit_price, notes } = req.body;
+    await ensureInventorySchema();
+
+    const { product_id, quantity, unit_price, notes, consumables_used } = req.body;
     const userId = req.user?.id;
     const quantityNumber = Number(quantity);
     const unitPriceNumber = Number(unit_price);
@@ -29,27 +38,31 @@ export const createSale = async (req, res) => {
       });
     }
 
-    await client.query('BEGIN');
+    const normalizedConsumables = Array.isArray(consumables_used) ? consumables_used.reduce((acc, item) => {
+      const consumableId = Number(item?.consumable_id);
+      const consumableQuantity = parsePositiveNumber(item?.quantity);
 
-    // Verificar que el producto existe y bloquear fila para evitar condiciones de carrera
+      if (!Number.isInteger(consumableId) || !consumableQuantity) {
+        return acc;
+      }
+
+      acc.set(consumableId, (acc.get(consumableId) || 0) + consumableQuantity);
+      return acc;
+    }, new Map()) : new Map();
+
+    await client.query('BEGIN');
+    transactionStarted = true;
+
     const productCheck = await client.query(
-      'SELECT id, stock_quantity FROM products WHERE id = $1 FOR UPDATE',
+      'SELECT id FROM products WHERE id = $1',
       [product_id]
     );
 
     if (productCheck.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({
-        error: 'Producto no encontrado'
-      });
-    }
-
-    const currentStock = Number(productCheck.rows[0].stock_quantity);
-    if (quantityNumber > currentStock) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        error: `Stock insuficiente. Disponible: ${currentStock}`
-      });
+      throw {
+        status: 404,
+        message: 'Producto no encontrado',
+      };
     }
 
     const total_amount = quantityNumber * unitPriceNumber;
@@ -61,24 +74,58 @@ export const createSale = async (req, res) => {
       [product_id, quantityNumber, unitPriceNumber, total_amount, userId, notes || null]
     );
 
-    await client.query(
-      'UPDATE products SET stock_quantity = stock_quantity - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-      [quantityNumber, product_id]
-    );
+    for (const [consumableId, consumableQuantity] of normalizedConsumables.entries()) {
+      const consumableResult = await client.query(
+        `SELECT id, name, current_stock
+         FROM consumables
+         WHERE id = $1
+         FOR UPDATE`,
+        [consumableId]
+      );
 
-    await client.query('COMMIT');
+      if (consumableResult.rows.length === 0) {
+        throw {
+          status: 404,
+          message: `Insumo no encontrado: ${consumableId}`,
+        };
+      }
 
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    try {
-      await client.query('ROLLBACK');
-    } catch (rollbackError) {
-      console.error('Error en rollback de venta:', rollbackError.message);
+      const consumable = consumableResult.rows[0];
+      const availableStock = Number(consumable.current_stock);
+
+      if (!Number.isFinite(availableStock) || availableStock < consumableQuantity) {
+        throw {
+          status: 400,
+          message: `Stock insuficiente para ${consumable.name}. Disponible: ${availableStock || 0}`,
+        };
+      }
+
+      await client.query(
+        `UPDATE consumables
+         SET current_stock = current_stock - $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        [consumableQuantity, consumableId]
+      );
+
+      await client.query(
+        `INSERT INTO consumable_stock_movements
+         (consumable_id, movement_type, quantity_change, reference_type, reference_id, user_id, notes)
+         VALUES ($1, 'sale', $2, 'sale', $3, $4, $5)`,
+        [consumableId, -consumableQuantity, result.rows[0].id, userId, notes || null]
+      );
     }
 
+    await client.query('COMMIT');
+    transactionStarted = false;
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    if (transactionStarted) {
+      await client.query('ROLLBACK');
+    }
     console.error('Error al crear venta:', error.message);
-    res.status(500).json({
-      error: 'Error al registrar la venta. Intenta de nuevo.'
+    res.status(error.status || 500).json({
+      error: error.message || 'Error al registrar la venta. Intenta de nuevo.'
     });
   } finally {
     client.release();
@@ -157,5 +204,141 @@ export const getAllSales = async (req, res) => {
     res.status(500).json({
       error: 'Error al obtener las ventas'
     });
+  }
+};
+
+export const getConsumables = async (req, res) => {
+  try {
+    await ensureInventorySchema();
+
+    const result = await pool.query(
+      `SELECT id, name, unit, current_stock, low_stock_threshold
+       FROM consumables
+       ORDER BY name`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener insumos:', error.message);
+    res.status(500).json({
+      error: 'Error al obtener insumos'
+    });
+  }
+};
+
+export const getProductConsumablesTemplate = async (req, res) => {
+  try {
+    await ensureInventorySchema();
+
+    const productId = Number(req.params.productId);
+    if (!Number.isInteger(productId)) {
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
+
+    const result = await pool.query(
+      `SELECT
+         pc.product_id,
+         pc.consumable_id,
+         pc.quantity_per_sale,
+         c.name,
+         c.unit,
+         c.current_stock
+       FROM product_consumables pc
+       JOIN consumables c ON c.id = pc.consumable_id
+       WHERE pc.product_id = $1
+       ORDER BY c.name`,
+      [productId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener plantilla de insumos:', error.message);
+    res.status(500).json({
+      error: 'Error al obtener plantilla de insumos'
+    });
+  }
+};
+
+export const saveProductConsumablesTemplate = async (req, res) => {
+  const client = await pool.connect();
+  let transactionStarted = false;
+
+  try {
+    await ensureInventorySchema();
+
+    const productId = Number(req.params.productId);
+    const { consumables } = req.body;
+
+    if (!Number.isInteger(productId)) {
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
+
+    if (!Array.isArray(consumables)) {
+      return res.status(400).json({ error: 'El campo consumables debe ser una lista' });
+    }
+
+    const normalizedConsumables = consumables.reduce((acc, item) => {
+      const consumableId = Number(item?.consumable_id);
+      const quantityPerSale = parsePositiveNumber(item?.quantity_per_sale);
+      if (!Number.isInteger(consumableId) || !quantityPerSale) {
+        return acc;
+      }
+
+      acc.set(consumableId, (acc.get(consumableId) || 0) + quantityPerSale);
+      return acc;
+    }, new Map());
+
+    await client.query('BEGIN');
+    transactionStarted = true;
+
+    const productCheck = await client.query(
+      'SELECT id FROM products WHERE id = $1',
+      [productId]
+    );
+
+    if (productCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    await client.query(
+      'DELETE FROM product_consumables WHERE product_id = $1',
+      [productId]
+    );
+
+    for (const [consumableId, quantityPerSale] of normalizedConsumables.entries()) {
+      const consumableCheck = await client.query(
+        'SELECT id FROM consumables WHERE id = $1',
+        [consumableId]
+      );
+
+      if (consumableCheck.rows.length === 0) {
+        throw {
+          status: 404,
+          message: `Insumo no encontrado: ${consumableId}`,
+        };
+      }
+
+      await client.query(
+        `INSERT INTO product_consumables (product_id, consumable_id, quantity_per_sale)
+         VALUES ($1, $2, $3)`,
+        [productId, consumableId, quantityPerSale]
+      );
+    }
+
+    await client.query('COMMIT');
+    transactionStarted = false;
+    res.json({ message: 'Plantilla de insumos actualizada' });
+  } catch (error) {
+    if (transactionStarted) {
+      await client.query('ROLLBACK');
+    }
+    console.error('Error al guardar plantilla de insumos:', error.message);
+    res.status(error.status || 500).json({
+      error: error.message || 'Error al guardar plantilla de insumos'
+    });
+  } finally {
+    client.release();
   }
 };

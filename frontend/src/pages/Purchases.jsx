@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
-import { productsAPI, purchasesAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { purchasesAPI } from '../services/api';
 import '../styles/Purchases.css';
 
 function Purchases() {
   const [purchases, setPurchases] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [consumablesStock, setConsumablesStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    product_id: '',
+    product_name: '',
     quantity: '',
+    unit: 'unit',
     unit_cost: '',
     supplier: '',
     notes: '',
   });
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     fetchData();
@@ -24,18 +27,19 @@ function Purchases() {
 
   const fetchData = async () => {
     try {
-      const [purchasesRes, productsRes] = await Promise.all([
+      const [purchasesRes, stockRes] = await Promise.all([
         purchasesAPI.getAll(),
-        productsAPI.getAll(),
+        purchasesAPI.getConsumablesStock(),
       ]);
       setPurchases(purchasesRes.data);
-      setProducts(productsRes.data);
+      setConsumablesStock(stockRes.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
       setLoading(false);
       if (error.response?.status === 401) {
-        navigate('/login');
+        logout();
+        navigate('/login', { replace: true });
       }
     }
   };
@@ -49,7 +53,7 @@ function Purchases() {
     e.preventDefault();
     setMessage('');
 
-    if (!formData.product_id || !formData.quantity || !formData.unit_cost) {
+    if (!formData.product_name || !formData.quantity || !formData.unit_cost) {
       setMessage('error:Todos los campos son requeridos');
       return;
     }
@@ -62,7 +66,14 @@ function Purchases() {
       });
 
       setMessage('success:Compra registrada exitosamente');
-      setFormData({ product_id: '', quantity: '', unit_cost: '', supplier: '', notes: '' });
+      setFormData({
+        product_name: '',
+        quantity: '',
+        unit: 'unit',
+        unit_cost: '',
+        supplier: '',
+        notes: '',
+      });
       fetchData();
 
       setTimeout(() => setMessage(''), 3000);
@@ -82,6 +93,38 @@ function Purchases() {
       <div className="container">
         <h1>📦 Gestión de Compras</h1>
 
+        <div className="stock-overview">
+          <h2>Stock actual de insumos</h2>
+          {consumablesStock.length === 0 ? (
+            <p className="empty-message">No hay insumos cargados todavía.</p>
+          ) : (
+            <div className="stock-table-wrapper">
+              <table className="stock-table">
+                <thead>
+                  <tr>
+                    <th>Insumo</th>
+                    <th>Stock Actual</th>
+                    <th>Unidad</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consumablesStock.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.name}</td>
+                      <td>{Number(item.current_stock).toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
+                      <td>{item.unit}</td>
+                      <td className={item.is_low_stock ? 'low-stock' : 'ok-stock'}>
+                        {item.is_low_stock ? 'Bajo stock' : 'OK'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         <div className="purchases-content">
           <div className="form-section">
             <h2>Registrar Nueva Compra</h2>
@@ -93,20 +136,15 @@ function Purchases() {
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Producto</label>
-                <select
-                  name="product_id"
-                  value={formData.product_id}
+                <label>Insumo / Material</label>
+                <input
+                  type="text"
+                  name="product_name"
+                  value={formData.product_name}
                   onChange={handleChange}
+                  placeholder="Ej: vaso 12oz, pitillo, bolsa de hielo"
                   required
-                >
-                  <option value="">Selecciona un producto</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name} (Stock: {product.stock_quantity || 0})
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div className="form-row">
@@ -123,16 +161,32 @@ function Purchases() {
                 </div>
 
                 <div className="form-group">
-                  <label>Costo Unitario ($)</label>
-                  <input
-                    type="number"
-                    name="unit_cost"
-                    step="0.01"
-                    value={formData.unit_cost}
+                  <label>Unidad</label>
+                  <select
+                    name="unit"
+                    value={formData.unit}
                     onChange={handleChange}
                     required
-                  />
+                  >
+                    <option value="unit">Unidad</option>
+                    <option value="pack">Paquete</option>
+                    <option value="bag">Bolsa</option>
+                    <option value="kg">Kg</option>
+                    <option value="litro">Litro</option>
+                  </select>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label>Costo Unitario ($)</label>
+                <input
+                  type="number"
+                  name="unit_cost"
+                  step="0.01"
+                  value={formData.unit_cost}
+                  onChange={handleChange}
+                  required
+                />
               </div>
 
               <div className="form-group">
@@ -170,8 +224,9 @@ function Purchases() {
                 <table className="purchases-table">
                   <thead>
                     <tr>
-                      <th>Producto</th>
+                      <th>Insumo</th>
                       <th>Cantidad</th>
+                      <th>Unidad</th>
                       <th>Costo Unitario</th>
                       <th>Total</th>
                       <th>Proveedor</th>
@@ -183,6 +238,7 @@ function Purchases() {
                       <tr key={purchase.id}>
                         <td>{purchase.product_name}</td>
                         <td>{purchase.quantity}</td>
+                        <td>{purchase.unit || 'unit'}</td>
                         <td>${purchase.unit_cost.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
                         <td className="total">
                           ${purchase.total_cost.toLocaleString('es-AR', { maximumFractionDigits: 2 })}

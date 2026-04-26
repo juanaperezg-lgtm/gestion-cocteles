@@ -46,6 +46,10 @@ function AppRoutes() {
         path="/reports"
         element={isAuthenticated ? <Reports /> : <Navigate to="/login" />}
       />
+      <Route
+        path="*"
+        element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />}
+      />
     </Routes>
   );
 }

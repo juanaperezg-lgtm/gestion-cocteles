@@ -34,6 +34,9 @@ export const salesAPI = {
   create: (sale) => API.post('/sales', sale),
   getAll: () => API.get('/sales'),
   getByDate: (date) => API.get('/sales/by-date', { params: { date } }),
+  getConsumables: () => API.get('/sales/consumables'),
+  getProductConsumables: (productId) => API.get(`/sales/product-consumables/${productId}`),
+  saveProductConsumables: (productId, consumables) => API.put(`/sales/product-consumables/${productId}`, { consumables }),
 };
 
 // Purchases
@@ -41,6 +44,7 @@ export const purchasesAPI = {
   create: (purchase) => API.post('/purchases', purchase),
   getAll: () => API.get('/purchases'),
   getByDate: (date) => API.get('/purchases/by-date', { params: { date } }),
+  getConsumablesStock: () => API.get('/purchases/consumables-stock'),
 };
 
 // Dashboard
@@ -48,6 +52,12 @@ export const dashboardAPI = {
   getToday: () => API.get('/dashboard/today'),
   getMonth: () => API.get('/dashboard/month'),
   getInventory: () => API.get('/dashboard/inventory'),
+};
+
+// Reset
+export const resetAPI = {
+  getInfo: () => API.get('/reset/info'),
+  execute: (data) => API.post('/reset/execute', data),
 };
 
 export default API;

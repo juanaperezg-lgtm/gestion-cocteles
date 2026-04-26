@@ -14,6 +14,61 @@
   gap: var(--spacing-md);
 }
 
+.stock-overview {
+  background: var(--bg-primary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--neutral-100);
+}
+
+.stock-overview h2 {
+  margin-top: 0;
+  color: var(--neutral-900);
+  margin-bottom: var(--spacing-lg);
+  font-size: 1.25rem;
+}
+
+.stock-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+}
+
+.stock-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.stock-table thead {
+  background: linear-gradient(90deg, var(--primary-600) 0%, var(--primary-700) 100%);
+}
+
+.stock-table th {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.stock-table td {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--neutral-100);
+}
+
+.ok-stock {
+  color: var(--success-600);
+  font-weight: 700;
+}
+
+.low-stock {
+  color: var(--error-600);
+  font-weight: 700;
+}
+
 .purchases-content {
   display: grid;
   grid-template-columns: 1fr 1.5fr;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
+import { useAuth } from '../context/AuthContext';
 import { productsAPI } from '../services/api';
 import '../styles/Products.css';
 
@@ -12,12 +13,12 @@ function Products() {
     description: '',
     purchase_price: '',
     sale_price: '',
-    stock_quantity: '',
     category: 'cocktail',
     unit: 'unit',
   });
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     fetchProducts();
@@ -32,7 +33,8 @@ function Products() {
       console.error('Error fetching products:', error);
       setLoading(false);
       if (error.response?.status === 401) {
-        navigate('/login');
+        logout();
+        navigate('/login', { replace: true });
       }
     }
   };
@@ -56,7 +58,6 @@ function Products() {
         ...formData,
         purchase_price: parseFloat(formData.purchase_price),
         sale_price: parseFloat(formData.sale_price),
-        stock_quantity: formData.stock_quantity === '' ? 0 : parseFloat(formData.stock_quantity),
       });
 
       setMessage('success:Producto creado exitosamente');
@@ -65,7 +66,6 @@ function Products() {
         description: '',
         purchase_price: '',
         sale_price: '',
-        stock_quantity: '',
         category: 'cocktail',
         unit: 'unit',
       });
@@ -146,19 +146,6 @@ function Products() {
                     value={formData.sale_price}
                     onChange={handleChange}
                     required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Stock Inicial (unidades)</label>
-                  <input
-                    type="number"
-                    name="stock_quantity"
-                    step="0.01"
-                    min="0"
-                    value={formData.stock_quantity}
-                    onChange={handleChange}
-                    placeholder="0"
                   />
                 </div>
               </div>

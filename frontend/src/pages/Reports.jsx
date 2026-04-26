@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
+import { useAuth } from '../context/AuthContext';
 import { salesAPI } from '../services/api';
 import '../styles/Reports.css';
 
@@ -11,6 +12,7 @@ function Reports() {
   const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     fetchAllSales();
@@ -26,7 +28,8 @@ function Reports() {
       console.error('Error fetching sales:', error);
       setLoading(false);
       if (error.response?.status === 401) {
-        navigate('/login');
+        logout();
+        navigate('/login', { replace: true });
       }
     }
   };

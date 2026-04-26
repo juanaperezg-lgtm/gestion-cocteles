@@ -2,6 +2,8 @@ import { BarChart3, Target, TrendingUp, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
+import { useAuth } from '../context/AuthContext';
+import MasterReset from '../components/MasterReset';
 import { dashboardAPI } from '../services/api';
 import '../styles/Dashboard.css';
 
@@ -10,6 +12,7 @@ function Dashboard() {
   const [monthData, setMonthData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
@@ -28,7 +31,8 @@ function Dashboard() {
       console.error('Error fetching dashboard:', error);
       setLoading(false);
       if (error.response?.status === 401) {
-        navigate('/login');
+        logout();
+        navigate('/login', { replace: true });
       }
     }
   };
@@ -40,7 +44,10 @@ function Dashboard() {
       <Navigation />
 
       <div className="container">
-        <h1>📊 Dashboard</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h1>📊 Dashboard</h1>
+          <MasterReset />
+        </div>
 
         <div className="stats-section">
           <h2>Hoy</h2>

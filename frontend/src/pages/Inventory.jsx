@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
+import { useAuth } from '../context/AuthContext';
 import { dashboardAPI } from '../services/api';
 import '../styles/Inventory.css';
 
@@ -8,6 +9,7 @@ function Inventory() {
   const [inventory, setInventory] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     fetchInventory();
@@ -22,7 +24,8 @@ function Inventory() {
       console.error('Error fetching inventory:', error);
       setLoading(false);
       if (error.response?.status === 401) {
-        navigate('/login');
+        logout();
+        navigate('/login', { replace: true });
       }
     }
   };

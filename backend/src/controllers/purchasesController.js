@@ -1,13 +1,26 @@
 import pool from '../config/database.js';
+import { ensureInventorySchema } from '../utils/inventorySchema.js';
+
+const normalizeUnit = (unit) => {
+  const unitValue = typeof unit === 'string' ? unit.trim().toLowerCase() : '';
+  return unitValue || 'unit';
+};
 
 export const createPurchase = async (req, res) => {
+  const client = await pool.connect();
+  let transactionStarted = false;
+
   try {
-    const { product_id, quantity, unit_cost, supplier, notes } = req.body;
+    await ensureInventorySchema();
+
+    const { product_name, quantity, unit_cost, supplier, notes, unit } = req.body;
     const userId = req.user?.id;
+    const productName = typeof product_name === 'string' ? product_name.trim() : '';
     const quantityNumber = Number(quantity);
     const unitCostNumber = Number(unit_cost);
+    const normalizedUnit = normalizeUnit(unit);
 
-    if (!product_id || !quantity || !unit_cost) {
+    if (!productName || !quantity || !unit_cost) {
       return res.status(400).json({ error: 'Campos requeridos faltantes' });
     }
 
@@ -20,36 +33,83 @@ export const createPurchase = async (req, res) => {
     }
 
     const total_cost = quantityNumber * unitCostNumber;
+    await client.query('BEGIN');
+    transactionStarted = true;
 
-    // Insertar compra
-    const result = await pool.query(
-      `INSERT INTO purchases (product_id, quantity, unit_cost, total_cost, supplier, purchase_date, user_id, notes)
-       VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, $7)
+    const existingConsumable = await client.query(
+      `SELECT id, unit
+       FROM consumables
+       WHERE LOWER(name) = LOWER($1)
+       LIMIT 1`,
+      [productName]
+    );
+
+    let consumableId;
+    let consumableUnit = normalizedUnit;
+    if (existingConsumable.rows.length > 0) {
+      consumableId = existingConsumable.rows[0].id;
+      consumableUnit = existingConsumable.rows[0].unit;
+    } else {
+      const consumableResult = await client.query(
+        `INSERT INTO consumables (name, unit, current_stock)
+         VALUES ($1, $2, 0)
+         RETURNING id, unit`,
+        [productName, normalizedUnit]
+      );
+      consumableId = consumableResult.rows[0].id;
+      consumableUnit = consumableResult.rows[0].unit;
+    }
+
+    const result = await client.query(
+      `INSERT INTO purchases (product_name, consumable_id, unit, quantity, unit_cost, total_cost, supplier, purchase_date, user_id, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, $8, $9)
        RETURNING *`,
-      [product_id, quantityNumber, unitCostNumber, total_cost, supplier, userId, notes]
+      [
+        productName,
+        consumableId,
+        consumableUnit,
+        quantityNumber,
+        unitCostNumber,
+        total_cost,
+        supplier || null,
+        userId,
+        notes || null,
+      ]
     );
 
-    // Actualizar stock del producto
-    await pool.query(
-      `UPDATE products SET stock_quantity = stock_quantity + $1 WHERE id = $2`,
-      [quantityNumber, product_id]
+    await client.query(
+      `UPDATE consumables
+       SET current_stock = current_stock + $1,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2`,
+      [quantityNumber, consumableId]
     );
 
-    // Actualizar inventario
-    await pool.query(
-      `UPDATE inventory SET total_stock = total_stock + $1, last_updated = CURRENT_TIMESTAMP WHERE product_id = $2`,
-      [quantityNumber, product_id]
+    await client.query(
+      `INSERT INTO consumable_stock_movements
+       (consumable_id, movement_type, quantity_change, reference_type, reference_id, user_id, notes)
+       VALUES ($1, 'purchase', $2, 'purchase', $3, $4, $5)`,
+      [consumableId, quantityNumber, result.rows[0].id, userId, notes || null]
     );
 
+    await client.query('COMMIT');
+    transactionStarted = false;
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    if (transactionStarted) {
+      await client.query('ROLLBACK');
+    }
     console.error('Error al crear compra:', error);
     res.status(500).json({ error: 'Error al registrar compra' });
+  } finally {
+    client.release();
   }
 };
 
 export const getAllPurchases = async (req, res) => {
   try {
+    await ensureInventorySchema();
+
     const result = await pool.query(
       `SELECT
          p.id,
@@ -62,10 +122,12 @@ export const getAllPurchases = async (req, res) => {
          p.user_id,
          p.notes,
          p.created_at,
-         pr.name as product_name
-       FROM purchases p
-       JOIN products pr ON p.product_id = pr.id
-       ORDER BY p.purchase_date DESC`
+         COALESCE(p.product_name, pr.name, c.name) as product_name,
+         COALESCE(p.unit, c.unit, 'unit') as unit
+         FROM purchases p
+        LEFT JOIN products pr ON p.product_id = pr.id
+        LEFT JOIN consumables c ON p.consumable_id = c.id
+         ORDER BY p.purchase_date DESC`
     );
     res.json(result.rows);
   } catch (error) {
@@ -76,6 +138,8 @@ export const getAllPurchases = async (req, res) => {
 
 export const getPurchasesByDate = async (req, res) => {
   try {
+    await ensureInventorySchema();
+
     const { date } = req.query;
     if (!date) {
       return res.status(400).json({ error: 'Parámetro date requerido' });
@@ -93,11 +157,13 @@ export const getPurchasesByDate = async (req, res) => {
          p.user_id,
          p.notes,
          p.created_at,
-         pr.name as product_name
-       FROM purchases p
-       JOIN products pr ON p.product_id = pr.id
-       WHERE p.purchase_date = $1
-       ORDER BY p.purchase_date DESC`,
+         COALESCE(p.product_name, pr.name, c.name) as product_name,
+         COALESCE(p.unit, c.unit, 'unit') as unit
+         FROM purchases p
+        LEFT JOIN products pr ON p.product_id = pr.id
+        LEFT JOIN consumables c ON p.consumable_id = c.id
+         WHERE p.purchase_date = $1
+         ORDER BY p.purchase_date DESC`,
       [date]
     );
 
@@ -105,5 +171,28 @@ export const getPurchasesByDate = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener compras:', error);
     res.status(500).json({ error: 'Error al obtener compras' });
+  }
+};
+
+export const getConsumablesStock = async (req, res) => {
+  try {
+    await ensureInventorySchema();
+
+    const result = await pool.query(
+      `SELECT
+         id,
+         name,
+         unit,
+         current_stock,
+         low_stock_threshold,
+         (current_stock <= low_stock_threshold) AS is_low_stock
+       FROM consumables
+       ORDER BY name`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener stock de insumos:', error);
+    res.status(500).json({ error: 'Error al obtener stock de insumos' });
   }
 };
