@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Dashboard from './pages/Dashboard';
+import Expenses from './pages/Expenses';
 import Inventory from './pages/Inventory';
 import Login from './pages/Login';
 import Products from './pages/Products';
@@ -49,6 +50,10 @@ function AppRoutes() {
       <Route
         path="/inventory"
         element={isAuthenticated ? <Inventory /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/expenses"
+        element={isAuthenticated ? <Expenses /> : <Navigate to="/login" />}
       />
       <Route
         path="/reports"

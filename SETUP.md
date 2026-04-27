@@ -52,6 +52,7 @@ DB_PORT=5432
 DB_NAME=cocteles_db
 DB_USER=postgres
 DB_PASSWORD=       # (dejar vacío si no tienes contraseña, o agregar tu contraseña)
+BUSINESS_TIMEZONE=America/Bogota
 JWT_SECRET=mi_secreto_super_seguro_12345
 JWT_EXPIRATION=7d
 ```

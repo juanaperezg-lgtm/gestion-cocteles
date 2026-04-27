@@ -4,6 +4,7 @@ import {
   LogOut,
   Menu,
   Package,
+  Receipt,
   ShoppingCart,
   TrendingUp,
   Warehouse,
@@ -100,6 +101,7 @@ function Navigation() {
     { path: '/products', label: 'Productos', icon: Package },
     { path: '/purchases', label: 'Compras', icon: TrendingUp },
     { path: '/inventory', label: 'Inventario', icon: Warehouse },
+    { path: '/expenses', label: 'Gastos', icon: Receipt },
     { path: '/reports', label: 'Reportes', icon: FileText },
   ];
 

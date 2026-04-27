@@ -156,6 +156,16 @@
   font-weight: 700;
 }
 
+.inventory-table td.low-stock {
+  color: var(--error-600);
+  font-weight: 700;
+}
+
+.inventory-table td.ok-stock {
+  color: var(--success-600);
+  font-weight: 700;
+}
+
 .loading,
 .error {
   display: flex;

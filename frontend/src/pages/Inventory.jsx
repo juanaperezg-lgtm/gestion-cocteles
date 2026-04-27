@@ -10,6 +10,10 @@ function Inventory() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const toNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
 
   useEffect(() => {
     fetchInventory();
@@ -65,7 +69,12 @@ function Inventory() {
 
           <div className="summary-card">
             <div className="summary-label">Total de Productos</div>
-            <div className="summary-value">{inventory.products?.length || 0}</div>
+            <div className="summary-value">{inventory.total_products ?? inventory.products?.length ?? 0}</div>
+          </div>
+
+          <div className="summary-card">
+            <div className="summary-label">Total de Insumos</div>
+            <div className="summary-value">{inventory.total_consumables ?? inventory.consumables?.length ?? 0}</div>
           </div>
         </div>
 
@@ -89,18 +98,51 @@ function Inventory() {
                 <tbody>
                   {inventory.products.map((product) => (
                     <tr key={product.id}>
-                      <td className="product-name">{product.name}</td>
-                      <td className="stock">{product.stock_quantity || 0}</td>
-                      <td>${product.purchase_price?.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
-                      <td>${product.sale_price?.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
-                      <td className="cost">
-                        ${product.inventory_cost?.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="value">
-                        ${product.inventory_value?.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="profit">
-                        ${(product.inventory_value - product.inventory_cost)?.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                        <td className="product-name">{product.name}</td>
+                        <td className="stock">{toNumber(product.stock_quantity).toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
+                        <td>${toNumber(product.purchase_price).toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
+                        <td>${toNumber(product.sale_price).toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
+                        <td className="cost">
+                          ${toNumber(product.inventory_cost).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="value">
+                          ${toNumber(product.inventory_value).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="profit">
+                          ${(toNumber(product.inventory_value) - toNumber(product.inventory_cost)).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="empty-message">No hay productos en inventario</p>
+          )}
+        </div>
+
+        <div className="inventory-table-section">
+          <h2>Detalle de Insumos y Materiales (Compras)</h2>
+
+          {inventory.consumables && inventory.consumables.length > 0 ? (
+            <div className="table-wrapper">
+              <table className="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Insumo</th>
+                    <th>Stock Actual</th>
+                    <th>Unidad</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventory.consumables.map((consumable) => (
+                    <tr key={consumable.id}>
+                      <td className="product-name">{consumable.name}</td>
+                      <td className="stock">{toNumber(consumable.current_stock).toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
+                      <td>{consumable.unit || 'unit'}</td>
+                      <td className={consumable.is_low_stock ? 'low-stock' : 'ok-stock'}>
+                        {consumable.is_low_stock ? 'Bajo stock' : 'OK'}
                       </td>
                     </tr>
                   ))}
@@ -108,7 +150,7 @@ function Inventory() {
               </table>
             </div>
           ) : (
-            <p className="empty-message">No hay productos en inventario</p>
+            <p className="empty-message">No hay insumos registrados en compras</p>
           )}
         </div>
       </div>

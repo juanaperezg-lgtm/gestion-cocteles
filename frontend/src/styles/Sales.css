@@ -21,6 +21,10 @@
   margin-top: var(--spacing-2xl);
 }
 
+.sales-content > * {
+  min-width: 0;
+}
+
 .form-section {
   background: var(--bg-primary);
   padding: var(--spacing-xl);
@@ -275,11 +279,16 @@
 
 .sales-table-wrapper {
   overflow-x: auto;
+  overflow-y: hidden;
   border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sales-table {
   width: 100%;
+  min-width: 760px;
   border-collapse: separate;
   border-spacing: 0;
   background: var(--bg-primary);

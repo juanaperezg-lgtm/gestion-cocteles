@@ -40,6 +40,13 @@
   font-weight: 700;
 }
 
+.quick-range-buttons {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
 .form-group {
   margin-bottom: var(--spacing-lg);
 }
@@ -131,6 +138,12 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--neutral-100);
+}
+
+.report-section h2 {
+  color: var(--neutral-900);
+  margin: var(--spacing-md) 0;
+  font-size: 1.1rem;
 }
 
 .summary-cards {

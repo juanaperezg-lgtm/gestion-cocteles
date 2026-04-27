@@ -1,5 +1,7 @@
 import pool from '../config/database.js';
 import { ensureInventorySchema } from '../utils/inventorySchema.js';
+import { ensureBusinessSchema } from '../utils/businessSchema.js';
+import { BUSINESS_DATE_SQL, BUSINESS_TIME_SQL } from '../utils/businessTime.js';
 
 const parsePositiveNumber = (value) => {
   const parsed = Number(value);
@@ -12,6 +14,7 @@ export const createSale = async (req, res) => {
 
   try {
     await ensureInventorySchema();
+    await ensureBusinessSchema();
 
     const { product_id, quantity, unit_price, notes, consumables_used } = req.body;
     const userId = req.user?.id;
@@ -54,7 +57,7 @@ export const createSale = async (req, res) => {
     transactionStarted = true;
 
     const productCheck = await client.query(
-      'SELECT id FROM products WHERE id = $1',
+      'SELECT id, name, purchase_price, stock_quantity FROM products WHERE id = $1 FOR UPDATE',
       [product_id]
     );
 
@@ -65,49 +68,84 @@ export const createSale = async (req, res) => {
       };
     }
 
+    const product = productCheck.rows[0];
+    const productStock = Number(product.stock_quantity);
+    const shouldTrackProductStock = Number.isFinite(productStock) && productStock > 0;
+
+    if (shouldTrackProductStock && productStock < quantityNumber) {
+      throw {
+        status: 400,
+        message: `Stock insuficiente para ${product.name}. Disponible: ${productStock}`,
+      };
+    }
+
+    let cogsAmount = 0;
+
+    if (normalizedConsumables.size > 0) {
+      for (const [consumableId, consumableQuantity] of normalizedConsumables.entries()) {
+        const consumableResult = await client.query(
+          `SELECT id, name, current_stock, avg_unit_cost
+           FROM consumables
+           WHERE id = $1
+           FOR UPDATE`,
+          [consumableId]
+        );
+
+        if (consumableResult.rows.length === 0) {
+          throw {
+            status: 404,
+            message: `Insumo no encontrado: ${consumableId}`,
+          };
+        }
+
+        const consumable = consumableResult.rows[0];
+        const availableStock = Number(consumable.current_stock);
+        const unitCost = Number(consumable.avg_unit_cost) || 0;
+
+        if (!Number.isFinite(availableStock) || availableStock < consumableQuantity) {
+          throw {
+            status: 400,
+            message: `Stock insuficiente para ${consumable.name}. Disponible: ${availableStock || 0}`,
+          };
+        }
+
+        cogsAmount += consumableQuantity * unitCost;
+
+        await client.query(
+          `UPDATE consumables
+           SET current_stock = current_stock - $1,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $2`,
+          [consumableQuantity, consumableId]
+        );
+
+      }
+    } else {
+      const purchasePrice = Number(product.purchase_price) || 0;
+      cogsAmount = quantityNumber * purchasePrice;
+    }
+
+    if (shouldTrackProductStock) {
+      await client.query(
+        `UPDATE products
+         SET stock_quantity = stock_quantity - $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        [quantityNumber, product_id]
+      );
+    }
+
     const total_amount = quantityNumber * unitPriceNumber;
+    const netProfit = total_amount - cogsAmount;
 
     const result = await client.query(
-      `INSERT INTO sales (product_id, quantity, unit_price, total_amount, user_id, sale_date, sale_time, notes)
-       VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, CURRENT_TIME, $6)
+      `INSERT INTO sales (product_id, quantity, unit_price, total_amount, cogs_amount, net_profit, user_id, sale_date, sale_time, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, ${BUSINESS_DATE_SQL}, ${BUSINESS_TIME_SQL}, $8)
        RETURNING *`,
-      [product_id, quantityNumber, unitPriceNumber, total_amount, userId, notes || null]
+      [product_id, quantityNumber, unitPriceNumber, total_amount, cogsAmount, netProfit, userId, notes || null]
     );
 
     for (const [consumableId, consumableQuantity] of normalizedConsumables.entries()) {
-      const consumableResult = await client.query(
-        `SELECT id, name, current_stock
-         FROM consumables
-         WHERE id = $1
-         FOR UPDATE`,
-        [consumableId]
-      );
-
-      if (consumableResult.rows.length === 0) {
-        throw {
-          status: 404,
-          message: `Insumo no encontrado: ${consumableId}`,
-        };
-      }
-
-      const consumable = consumableResult.rows[0];
-      const availableStock = Number(consumable.current_stock);
-
-      if (!Number.isFinite(availableStock) || availableStock < consumableQuantity) {
-        throw {
-          status: 400,
-          message: `Stock insuficiente para ${consumable.name}. Disponible: ${availableStock || 0}`,
-        };
-      }
-
-      await client.query(
-        `UPDATE consumables
-         SET current_stock = current_stock - $1,
-             updated_at = CURRENT_TIMESTAMP
-         WHERE id = $2`,
-        [consumableQuantity, consumableId]
-      );
-
       await client.query(
         `INSERT INTO consumable_stock_movements
          (consumable_id, movement_type, quantity_change, reference_type, reference_id, user_id, notes)
@@ -134,6 +172,8 @@ export const createSale = async (req, res) => {
 
 export const getSalesByDate = async (req, res) => {
   try {
+    await ensureBusinessSchema();
+
     const { date } = req.query;
 
     if (!date) {
@@ -156,6 +196,8 @@ export const getSalesByDate = async (req, res) => {
          s.quantity,
          s.unit_price,
          s.total_amount,
+         s.cogs_amount,
+         s.net_profit,
          s.user_id,
          TO_CHAR(s.sale_date, 'YYYY-MM-DD') as sale_date,
          TO_CHAR(s.sale_time, 'HH24:MI:SS') as sale_time,
@@ -180,6 +222,8 @@ export const getSalesByDate = async (req, res) => {
 
 export const getAllSales = async (req, res) => {
   try {
+    await ensureBusinessSchema();
+
     const result = await pool.query(
       `SELECT
          s.id,
@@ -187,6 +231,8 @@ export const getAllSales = async (req, res) => {
          s.quantity,
          s.unit_price,
          s.total_amount,
+         s.cogs_amount,
+         s.net_profit,
          s.user_id,
          TO_CHAR(s.sale_date, 'YYYY-MM-DD') as sale_date,
          TO_CHAR(s.sale_time, 'HH24:MI:SS') as sale_time,
@@ -210,9 +256,10 @@ export const getAllSales = async (req, res) => {
 export const getConsumables = async (req, res) => {
   try {
     await ensureInventorySchema();
+    await ensureBusinessSchema();
 
     const result = await pool.query(
-      `SELECT id, name, unit, current_stock, low_stock_threshold
+      `SELECT id, name, unit, current_stock, avg_unit_cost, low_stock_threshold
        FROM consumables
        ORDER BY name`
     );

@@ -1,5 +1,7 @@
 import pool from '../config/database.js';
 import { ensureInventorySchema } from '../utils/inventorySchema.js';
+import { ensureBusinessSchema } from '../utils/businessSchema.js';
+import { BUSINESS_DATE_SQL } from '../utils/businessTime.js';
 
 const normalizeUnit = (unit) => {
   const unitValue = typeof unit === 'string' ? unit.trim().toLowerCase() : '';
@@ -12,6 +14,7 @@ export const createPurchase = async (req, res) => {
 
   try {
     await ensureInventorySchema();
+    await ensureBusinessSchema();
 
     const { product_name, quantity, unit_cost, supplier, notes, unit } = req.body;
     const userId = req.user?.id;
@@ -38,23 +41,30 @@ export const createPurchase = async (req, res) => {
 
     const existingConsumable = await client.query(
       `SELECT id, unit
+             , current_stock
+             , avg_unit_cost
        FROM consumables
        WHERE LOWER(name) = LOWER($1)
-       LIMIT 1`,
+       LIMIT 1
+       FOR UPDATE`,
       [productName]
     );
 
     let consumableId;
     let consumableUnit = normalizedUnit;
+    let previousStock = 0;
+    let previousAvgUnitCost = 0;
     if (existingConsumable.rows.length > 0) {
       consumableId = existingConsumable.rows[0].id;
       consumableUnit = existingConsumable.rows[0].unit;
+      previousStock = Number(existingConsumable.rows[0].current_stock) || 0;
+      previousAvgUnitCost = Number(existingConsumable.rows[0].avg_unit_cost) || 0;
     } else {
       const consumableResult = await client.query(
-        `INSERT INTO consumables (name, unit, current_stock)
-         VALUES ($1, $2, 0)
+        `INSERT INTO consumables (name, unit, current_stock, avg_unit_cost)
+         VALUES ($1, $2, 0, $3)
          RETURNING id, unit`,
-        [productName, normalizedUnit]
+        [productName, normalizedUnit, unitCostNumber]
       );
       consumableId = consumableResult.rows[0].id;
       consumableUnit = consumableResult.rows[0].unit;
@@ -62,7 +72,7 @@ export const createPurchase = async (req, res) => {
 
     const result = await client.query(
       `INSERT INTO purchases (product_name, consumable_id, unit, quantity, unit_cost, total_cost, supplier, purchase_date, user_id, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, $8, $9)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, ${BUSINESS_DATE_SQL}, $8, $9)
        RETURNING *`,
       [
         productName,
@@ -77,12 +87,18 @@ export const createPurchase = async (req, res) => {
       ]
     );
 
+    const nextStock = previousStock + quantityNumber;
+    const nextAvgUnitCost = nextStock > 0
+      ? ((previousStock * previousAvgUnitCost) + (quantityNumber * unitCostNumber)) / nextStock
+      : unitCostNumber;
+
     await client.query(
       `UPDATE consumables
-       SET current_stock = current_stock + $1,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2`,
-      [quantityNumber, consumableId]
+       SET current_stock = $1,
+           avg_unit_cost = $2,
+            updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3`,
+      [nextStock, nextAvgUnitCost, consumableId]
     );
 
     await client.query(
@@ -109,6 +125,7 @@ export const createPurchase = async (req, res) => {
 export const getAllPurchases = async (req, res) => {
   try {
     await ensureInventorySchema();
+    await ensureBusinessSchema();
 
     const result = await pool.query(
       `SELECT
@@ -139,6 +156,7 @@ export const getAllPurchases = async (req, res) => {
 export const getPurchasesByDate = async (req, res) => {
   try {
     await ensureInventorySchema();
+    await ensureBusinessSchema();
 
     const { date } = req.query;
     if (!date) {
@@ -177,6 +195,7 @@ export const getPurchasesByDate = async (req, res) => {
 export const getConsumablesStock = async (req, res) => {
   try {
     await ensureInventorySchema();
+    await ensureBusinessSchema();
 
     const result = await pool.query(
       `SELECT
@@ -184,6 +203,8 @@ export const getConsumablesStock = async (req, res) => {
          name,
          unit,
          current_stock,
+         avg_unit_cost,
+         (current_stock * avg_unit_cost) AS inventory_cost,
          low_stock_threshold,
          (current_stock <= low_stock_threshold) AS is_low_stock
        FROM consumables

@@ -7,6 +7,7 @@ import productsRoutes from './routes/products.js';
 import purchasesRoutes from './routes/purchases.js';
 import dashboardRoutes from './routes/dashboard.js';
 import resetRoutes from './routes/reset.js';
+import expensesRoutes from './routes/expenses.js';
 import { authMiddleware } from './middleware/auth.js';
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use('/api/sales', authMiddleware, salesRoutes);
 app.use('/api/products', authMiddleware, productsRoutes);
 app.use('/api/purchases', authMiddleware, purchasesRoutes);
 app.use('/api/dashboard', authMiddleware, dashboardRoutes);
+app.use('/api/expenses', authMiddleware, expensesRoutes);
 app.use('/api/reset', authMiddleware, resetRoutes);
 
 // Ruta de prueba

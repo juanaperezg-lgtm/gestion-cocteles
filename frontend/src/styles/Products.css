@@ -21,6 +21,10 @@
   margin-top: var(--spacing-2xl);
 }
 
+.products-content > * {
+  min-width: 0;
+}
+
 .form-section {
   background: var(--bg-primary);
   padding: var(--spacing-xl);
@@ -179,11 +183,16 @@
 
 .products-table-wrapper {
   overflow-x: auto;
+  overflow-y: hidden;
   border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .products-table {
   width: 100%;
+  min-width: 860px;
   border-collapse: separate;
   border-spacing: 0;
 }

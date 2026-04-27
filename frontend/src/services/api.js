@@ -61,6 +61,7 @@ export const warmupAppCache = async () => {
     cachedGet('/sales', {}, 60_000),
     cachedGet('/purchases', {}, 60_000),
     cachedGet('/purchases/consumables-stock', {}, 60_000),
+    cachedGet('/expenses', {}, 60_000),
   ]);
 };
 
@@ -99,7 +100,7 @@ export const productsAPI = {
 export const salesAPI = {
   create: async (sale) => {
     const response = await API.post('/sales', sale);
-    invalidateCacheByPrefix(['/sales', '/dashboard', '/purchases/consumables-stock']);
+    invalidateCacheByPrefix(['/sales', '/dashboard', '/purchases/consumables-stock', '/products']);
     return response;
   },
   getAll: () => cachedGet('/sales', {}, 60_000),
@@ -117,7 +118,7 @@ export const salesAPI = {
 export const purchasesAPI = {
   create: async (purchase) => {
     const response = await API.post('/purchases', purchase);
-    invalidateCacheByPrefix(['/purchases', '/sales/consumables']);
+    invalidateCacheByPrefix(['/purchases', '/sales/consumables', '/dashboard/inventory']);
     return response;
   },
   getAll: () => cachedGet('/purchases', {}, 60_000),
@@ -130,6 +131,18 @@ export const dashboardAPI = {
   getToday: () => cachedGet('/dashboard/today', {}, 30_000),
   getMonth: () => cachedGet('/dashboard/month', {}, 30_000),
   getInventory: () => cachedGet('/dashboard/inventory', {}, 30_000),
+  getSummary: (startDate, endDate) => cachedGet('/dashboard/summary', { params: { startDate, endDate } }, 30_000),
+};
+
+// Operating expenses
+export const expensesAPI = {
+  create: async (expense) => {
+    const response = await API.post('/expenses', expense);
+    invalidateCacheByPrefix(['/expenses', '/dashboard']);
+    return response;
+  },
+  getAll: () => cachedGet('/expenses', {}, 60_000),
+  getByDateRange: (startDate, endDate) => cachedGet('/expenses/by-date', { params: { startDate, endDate } }, 30_000),
 };
 
 // Reset
