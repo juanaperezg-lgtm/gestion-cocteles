@@ -109,10 +109,8 @@ function Reports() {
       ['Fecha de generacion', new Date().toLocaleString('es-AR')],
       [],
       ['RESUMEN'],
-      ['Cantidad de Ventas', summary.totals.sales_count],
       ['Ingresos Totales', toNumber(summary.totals.total_revenue).toFixed(2)],
       ['Costo de Ventas', toNumber(summary.totals.total_cogs).toFixed(2)],
-      ['Ganancia Bruta', toNumber(summary.totals.gross_profit).toFixed(2)],
       ['Gastos Operativos', toNumber(summary.totals.total_expenses).toFixed(2)],
       ['Neto Libre', toNumber(summary.totals.net_profit).toFixed(2)],
       [],
@@ -135,6 +133,23 @@ function Reports() {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  };
+
+  const downloadPDF = async () => {
+    try {
+      const response = await dashboardAPI.getSummaryPdf(startDate, endDate);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte_financiero_${startDate}_${endDate}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading PDF report:', error);
+    }
   };
 
   if (loading) return <div className="loading">Cargando reportes...</div>;
@@ -175,16 +190,12 @@ function Reports() {
             </div>
 
             <button type="button" onClick={handleFilter} className="filter-btn">Filtrar</button>
+            <button type="button" onClick={downloadPDF} className="download-btn">📄 Descargar PDF</button>
             <button type="button" onClick={downloadCSV} className="download-btn">📥 Descargar CSV</button>
           </div>
 
           <div className="report-section">
             <div className="summary-cards">
-              <div className="summary-card">
-                <div className="summary-label">Ventas</div>
-                <div className="summary-value">{summary?.totals?.sales_count || 0}</div>
-              </div>
-
               <div className="summary-card">
                 <div className="summary-label">Ingresos</div>
                 <div className="summary-value">

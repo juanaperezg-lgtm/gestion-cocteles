@@ -87,14 +87,6 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="stat-box">
-              <div className="stat-label">
-                <BarChart3 size={20} style={{ display: 'inline', marginRight: '8px' }} />
-                Cantidad de Ventas
-              </div>
-              <div className="stat-value">{toNumber(todayData?.sales_count)}</div>
-            </div>
-
             <div className="stat-box success">
               <div className="stat-label">
                 <Zap size={20} style={{ display: 'inline', marginRight: '8px' }} />
@@ -108,13 +100,12 @@ function Dashboard() {
 
           {todayData?.top_products?.length > 0 && (
             <div className="products-section">
-              <h3>Productos Más Vendidos</h3>
+              <h3>Top Productos por Ingresos</h3>
               <div className="products-table-wrapper">
                 <table>
                   <thead>
                     <tr>
                       <th>Producto</th>
-                      <th>Cantidad Vendida</th>
                       <th>Ingresos</th>
                     </tr>
                   </thead>
@@ -122,7 +113,6 @@ function Dashboard() {
                     {todayData.top_products.map((product, idx) => (
                       <tr key={idx}>
                         <td>{product.name}</td>
-                        <td>{product.quantity_sold}</td>
                         <td>
                           ${toNumber(product.revenue).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
                         </td>
@@ -177,25 +167,16 @@ function Dashboard() {
                 ${toNumber(monthData?.net_profit_after_expenses).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
               </div>
             </div>
-
-            <div className="stat-box">
-              <div className="stat-label">
-                <Target size={20} style={{ display: 'inline', marginRight: '8px' }} />
-                Cantidad de Ventas
-              </div>
-              <div className="stat-value">{toNumber(monthData?.sales_count)}</div>
-            </div>
           </div>
 
           {monthData?.top_products?.length > 0 && (
             <div className="products-section">
-              <h3>Top 10 Productos del Mes</h3>
+              <h3>Top 10 Productos del Mes por Ingresos</h3>
               <div className="products-table-wrapper">
                 <table>
                   <thead>
                     <tr>
                       <th>Producto</th>
-                      <th>Cantidad Vendida</th>
                       <th>Ingresos</th>
                     </tr>
                   </thead>
@@ -203,7 +184,6 @@ function Dashboard() {
                     {monthData.top_products.map((product, idx) => (
                       <tr key={idx}>
                         <td>{product.name}</td>
-                        <td>{product.quantity_sold}</td>
                         <td>
                           ${toNumber(product.revenue).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
                         </td>

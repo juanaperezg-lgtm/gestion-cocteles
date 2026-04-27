@@ -132,6 +132,10 @@ export const dashboardAPI = {
   getMonth: () => cachedGet('/dashboard/month', {}, 30_000),
   getInventory: () => cachedGet('/dashboard/inventory', {}, 30_000),
   getSummary: (startDate, endDate) => cachedGet('/dashboard/summary', { params: { startDate, endDate } }, 30_000),
+  getSummaryPdf: (startDate, endDate) => API.get('/dashboard/summary/pdf', {
+    params: { startDate, endDate },
+    responseType: 'blob',
+  }),
 };
 
 // Operating expenses
