@@ -1,4 +1,16 @@
 import pool from '../config/database.js';
+import { ensureInventorySchema } from '../utils/inventorySchema.js';
+import { ensureBusinessSchema } from '../utils/businessSchema.js';
+
+const RESET_TABLES = [
+  'operating_expenses',
+  'consumable_stock_movements',
+  'product_consumables',
+  'sales',
+  'purchases',
+  'products',
+  'consumables',
+];
 
 export const masterReset = async (req, res) => {
   try {
@@ -17,6 +29,9 @@ export const masterReset = async (req, res) => {
       });
     }
 
+    await ensureInventorySchema();
+    await ensureBusinessSchema();
+
     // Iniciar transacción
     const client = await pool.connect();
 
@@ -24,19 +39,18 @@ export const masterReset = async (req, res) => {
       await client.query('BEGIN');
 
       // Limpiar tablas y reiniciar IDs sin requerir privilegios de superusuario
-      await client.query(`
-        TRUNCATE TABLE purchases, sales, inventory, products
-        RESTART IDENTITY CASCADE
-      `);
+      await client.query(
+        `TRUNCATE TABLE ${RESET_TABLES.join(', ')} RESTART IDENTITY CASCADE`
+      );
 
       await client.query('COMMIT');
 
       res.json({
         success: true,
         message: 'Reseteo maestro completado exitosamente',
-        deletedTables: ['products', 'sales', 'purchases', 'inventory'],
+        deletedTables: RESET_TABLES,
         timestamp: new Date().toISOString(),
-        note: 'Los usuarios han sido mantenidos. Solo se eliminaron datos transaccionales e inventario.'
+        note: 'Los usuarios se mantienen. Se eliminaron todos los datos operativos del negocio.'
       });
 
     } catch (error) {
@@ -61,11 +75,14 @@ export const masterReset = async (req, res) => {
  */
 export const getMasterResetInfo = async (req, res) => {
   try {
+    await ensureInventorySchema();
+    await ensureBusinessSchema();
+
     const client = await pool.connect();
 
     try {
       // Contar registros en cada tabla
-      const tables = ['products', 'sales', 'purchases', 'inventory'];
+      const tables = RESET_TABLES;
       const counts = {};
 
       for (const table of tables) {

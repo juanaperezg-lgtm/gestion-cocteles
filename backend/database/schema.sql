@@ -93,14 +93,6 @@ CREATE TABLE IF NOT EXISTS consumable_stock_movements (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de inventario (resumen de stock)
-CREATE TABLE IF NOT EXISTS inventory (
-  id SERIAL PRIMARY KEY,
-  product_id INTEGER NOT NULL UNIQUE REFERENCES products(id),
-  total_stock DECIMAL(10, 2) NOT NULL DEFAULT 0,
-  last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Índices para mejorar performance
 CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date);
 CREATE INDEX IF NOT EXISTS idx_sales_product_id ON sales(product_id);
