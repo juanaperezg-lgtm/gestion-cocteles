@@ -142,7 +142,7 @@ function Navigation() {
             <span className="user-info">{user?.full_name || user?.username}</span>
             <button type="button" onClick={handleLogout} className="logout-btn">
               <LogOut size={16} />
-              Logout
+              Cerrar sesión
             </button>
           </div>
 
@@ -195,7 +195,7 @@ function Navigation() {
               className="logout-btn-menu"
             >
               <LogOut size={18} />
-              Cerrar sesion
+              Cerrar sesión
             </button>
           </div>
         </div>

@@ -7,7 +7,7 @@ import '../styles/Login.css';
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -17,7 +17,7 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setFeedback({ type: '', message: '' });
     setLoading(true);
 
     try {
@@ -25,7 +25,10 @@ function Login() {
       login(response.data.token, response.data.user);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al iniciar sesión');
+      setFeedback({
+        type: 'error',
+        message: err.response?.data?.error || 'Error al iniciar sesión',
+      });
     } finally {
       setLoading(false);
     }
@@ -33,20 +36,24 @@ function Login() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError('');
+    setFeedback({ type: '', message: '' });
     setLoading(true);
 
     try {
       await authAPI.register(username, email, password, fullName);
-      setError('');
       setIsLogin(true);
-      setUsername('');
       setPassword('');
       setEmail('');
       setFullName('');
-      alert('Registro exitoso. Por favor inicia sesión.');
+      setFeedback({
+        type: 'success',
+        message: 'Registro exitoso. Ahora inicia sesión.',
+      });
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al registrarse');
+      setFeedback({
+        type: 'error',
+        message: err.response?.data?.error || 'Error al registrarse',
+      });
     } finally {
       setLoading(false);
     }
@@ -56,11 +63,15 @@ function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>🍹 Gestión de Coctelería</h1>
+          <h1>🍹 CockTales</h1>
           <p>Sistema de Ventas y Análisis</p>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {feedback.message && (
+          <div className={`auth-message ${feedback.type}`} role="alert">
+            {feedback.message}
+          </div>
+        )}
 
         <form onSubmit={isLogin ? handleLogin : handleRegister}>
           {!isLogin && (
@@ -115,23 +126,29 @@ function Login() {
           {isLogin ? (
             <>
               ¿No tienes cuenta?{' '}
-              <button
-                type="button"
-                onClick={() => setIsLogin(false)}
-                className="toggle-btn"
-              >
-                Regístrate aquí
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(false);
+                    setFeedback({ type: '', message: '' });
+                  }}
+                  className="toggle-btn"
+                >
+                  Regístrate aquí
               </button>
             </>
           ) : (
             <>
               ¿Ya tienes cuenta?{' '}
-              <button
-                type="button"
-                onClick={() => setIsLogin(true)}
-                className="toggle-btn"
-              >
-                Inicia sesión
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(true);
+                    setFeedback({ type: '', message: '' });
+                  }}
+                  className="toggle-btn"
+                >
+                  Inicia sesión
               </button>
             </>
           )}

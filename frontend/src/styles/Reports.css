@@ -61,20 +61,24 @@
   letter-spacing: 0.5px;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   width: 100%;
   padding: var(--spacing-md);
   border: 2px solid var(--neutral-200);
   border-radius: var(--radius-lg);
   font-size: 0.95rem;
   transition: all 0.3s ease;
+  background: var(--bg-primary);
 }
 
-.form-group input:hover {
+.form-group input:hover,
+.form-group select:hover {
   border-color: var(--neutral-300);
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: var(--primary-500);
   box-shadow: 0 0 0 3px var(--primary-100);

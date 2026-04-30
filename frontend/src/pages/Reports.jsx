@@ -34,6 +34,8 @@ function Reports() {
   const [startDate, setStartDate] = useState(initialRange.startDate);
   const [endDate, setEndDate] = useState(initialRange.endDate);
   const [summary, setSummary] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expenseCategory, setExpenseCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -73,6 +75,56 @@ function Reports() {
   const toNumber = (value) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const normalizeText = (value) => (value || '').toString().trim().toLowerCase();
+
+  const availableExpenseCategories = useMemo(() => {
+    const categoryMap = new Map();
+
+    (summary?.expenses || []).forEach((expense) => {
+      const rawCategory = (expense.category || '').toString().trim();
+      const key = normalizeText(rawCategory);
+      if (key && !categoryMap.has(key)) {
+        categoryMap.set(key, rawCategory);
+      }
+    });
+
+    return Array.from(categoryMap.entries()).map(([key, label]) => ({ key, label }));
+  }, [summary]);
+
+  const filteredSales = useMemo(() => {
+    const term = normalizeText(searchTerm);
+    if (!summary?.sales?.length) return [];
+    if (!term) return summary.sales;
+
+    return summary.sales.filter((sale) => (
+      normalizeText(sale.product_name).includes(term)
+      || normalizeText(sale.sale_date).includes(term)
+    ));
+  }, [summary, searchTerm]);
+
+  const filteredExpenses = useMemo(() => {
+    if (!summary?.expenses?.length) return [];
+
+    const term = normalizeText(searchTerm);
+    const hasCategoryFilter = expenseCategory !== 'all';
+
+    return summary.expenses.filter((expense) => {
+      const category = normalizeText(expense.category);
+      const matchesCategory = !hasCategoryFilter || category === expenseCategory;
+      const matchesTerm = !term
+        || normalizeText(expense.description).includes(term)
+        || category.includes(term)
+        || normalizeText(expense.expense_date).includes(term);
+
+      return matchesCategory && matchesTerm;
+    });
+  }, [summary, searchTerm, expenseCategory]);
+
+  const clearAdvancedFilters = () => {
+    setSearchTerm('');
+    setExpenseCategory('all');
   };
 
   const escapeCSVValue = (value) => {
@@ -189,7 +241,33 @@ function Reports() {
               />
             </div>
 
+            <h2>Detalle</h2>
+
+            <div className="form-group">
+              <label>Buscar en tablas</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Producto, fecha o descripción"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Categoría de gasto</label>
+              <select
+                value={expenseCategory}
+                onChange={(event) => setExpenseCategory(event.target.value)}
+              >
+                <option value="all">Todas</option>
+                {availableExpenseCategories.map((category) => (
+                  <option key={category.key} value={category.key}>{category.label}</option>
+                ))}
+              </select>
+            </div>
+
             <button type="button" onClick={handleFilter} className="filter-btn">Filtrar</button>
+            <button type="button" onClick={clearAdvancedFilters} className="reset-btn">Limpiar detalle</button>
             <button type="button" onClick={downloadPDF} className="download-btn">📄 Descargar PDF</button>
             <button type="button" onClick={downloadCSV} className="download-btn">📥 Descargar CSV</button>
           </div>
@@ -225,8 +303,8 @@ function Reports() {
               </div>
             </div>
 
-            <h2>Ventas del período</h2>
-            {summary?.sales?.length ? (
+            <h2>Ventas del período ({filteredSales.length})</h2>
+            {filteredSales.length ? (
               <div className="table-wrapper">
                 <table className="reports-table">
                   <thead>
@@ -240,7 +318,7 @@ function Reports() {
                     </tr>
                   </thead>
                   <tbody>
-                    {summary.sales.map((sale) => (
+                    {filteredSales.map((sale) => (
                       <tr key={sale.id}>
                         <td>{sale.sale_date}</td>
                         <td>{sale.product_name}</td>
@@ -254,11 +332,11 @@ function Reports() {
                 </table>
               </div>
             ) : (
-              <p className="empty-message">No hay ventas en el período</p>
+              <p className="empty-message">No hay ventas para los filtros aplicados</p>
             )}
 
-            <h2 style={{ marginTop: '24px' }}>Gastos operativos del período</h2>
-            {summary?.expenses?.length ? (
+            <h2 style={{ marginTop: '24px' }}>Gastos operativos del período ({filteredExpenses.length})</h2>
+            {filteredExpenses.length ? (
               <div className="table-wrapper">
                 <table className="reports-table">
                   <thead>
@@ -270,7 +348,7 @@ function Reports() {
                     </tr>
                   </thead>
                   <tbody>
-                    {summary.expenses.map((expense) => (
+                    {filteredExpenses.map((expense) => (
                       <tr key={expense.id}>
                         <td>{expense.expense_date}</td>
                         <td>{expense.category}</td>
@@ -282,7 +360,7 @@ function Reports() {
                 </table>
               </div>
             ) : (
-              <p className="empty-message">No hay gastos operativos en el período</p>
+              <p className="empty-message">No hay gastos para los filtros aplicados</p>
             )}
           </div>
         </div>
