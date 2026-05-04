@@ -1,8 +1,18 @@
 import pool from '../config/database.js';
+import { ensureBusinessSchema } from '../utils/businessSchema.js';
 
 export const getAllProducts = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM products ORDER BY name');
+    await ensureBusinessSchema();
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    const result = await pool.query(
+      'SELECT * FROM products WHERE user_id = $1 ORDER BY name',
+      [userId]
+    );
     res.json(result.rows);
   } catch (error) {
     console.error('Error al obtener productos:', error);
@@ -12,6 +22,12 @@ export const getAllProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
+    await ensureBusinessSchema();
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
     const { name, description, purchase_price, sale_price, stock_quantity, category, unit } = req.body;
     const purchasePriceNumber = Number(purchase_price);
     const salePriceNumber = Number(sale_price);
@@ -33,10 +49,10 @@ export const createProduct = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO products (name, description, purchase_price, sale_price, stock_quantity, category, unit)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO products (name, description, purchase_price, sale_price, stock_quantity, category, unit, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [name, description, purchasePriceNumber, salePriceNumber, stockQuantityNumber, category, unit]
+      [name, description, purchasePriceNumber, salePriceNumber, stockQuantityNumber, category, unit, userId]
     );
 
     res.status(201).json(result.rows[0]);
@@ -48,12 +64,18 @@ export const createProduct = async (req, res) => {
 
 export const updateProductStock = async (req, res) => {
   try {
+    await ensureBusinessSchema();
     const { id } = req.params;
     const { stock_quantity } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     const result = await pool.query(
-      'UPDATE products SET stock_quantity = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
-      [stock_quantity, id]
+      'UPDATE products SET stock_quantity = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING *',
+      [stock_quantity, id, userId]
     );
 
     if (result.rows.length === 0) {

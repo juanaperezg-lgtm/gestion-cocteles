@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS products (
   category VARCHAR(50), -- 'cocktail', 'ingredient', 'beverage', etc
   stock_quantity DECIMAL(10, 2) DEFAULT 0,
   unit VARCHAR(20), -- 'ml', 'cl', 'unit', 'bottle', etc
+  user_id INTEGER NOT NULL REFERENCES users(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS sales (
   user_id INTEGER NOT NULL REFERENCES users(id),
   sale_date DATE NOT NULL,
   sale_time TIME NOT NULL,
+  payment_method VARCHAR(30) NOT NULL DEFAULT 'efectivo',
   notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -64,12 +66,13 @@ CREATE TABLE IF NOT EXISTS consumables (
   unit VARCHAR(20) NOT NULL DEFAULT 'unit',
   current_stock DECIMAL(10, 2) NOT NULL DEFAULT 0,
   low_stock_threshold DECIMAL(10, 2) NOT NULL DEFAULT 10,
+  user_id INTEGER NOT NULL REFERENCES users(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_consumables_name_lower
-ON consumables (LOWER(name));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_consumables_user_name_lower
+ON consumables (user_id, LOWER(name));
 
 -- Plantilla de insumos por producto vendido
 CREATE TABLE IF NOT EXISTS product_consumables (

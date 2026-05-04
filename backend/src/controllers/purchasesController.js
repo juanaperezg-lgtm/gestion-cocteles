@@ -43,11 +43,12 @@ export const createPurchase = async (req, res) => {
       `SELECT id, unit
              , current_stock
              , avg_unit_cost
-       FROM consumables
-       WHERE LOWER(name) = LOWER($1)
-       LIMIT 1
-       FOR UPDATE`,
-      [productName]
+        FROM consumables
+        WHERE LOWER(name) = LOWER($1)
+          AND user_id = $2
+        LIMIT 1
+        FOR UPDATE`,
+      [productName, userId]
     );
 
     let consumableId;
@@ -61,10 +62,10 @@ export const createPurchase = async (req, res) => {
       previousAvgUnitCost = Number(existingConsumable.rows[0].avg_unit_cost) || 0;
     } else {
       const consumableResult = await client.query(
-        `INSERT INTO consumables (name, unit, current_stock, avg_unit_cost)
-         VALUES ($1, $2, 0, $3)
+        `INSERT INTO consumables (name, unit, current_stock, avg_unit_cost, user_id)
+         VALUES ($1, $2, 0, $3, $4)
          RETURNING id, unit`,
-        [productName, normalizedUnit, unitCostNumber]
+        [productName, normalizedUnit, unitCostNumber, userId]
       );
       consumableId = consumableResult.rows[0].id;
       consumableUnit = consumableResult.rows[0].unit;
@@ -96,9 +97,10 @@ export const createPurchase = async (req, res) => {
       `UPDATE consumables
        SET current_stock = $1,
            avg_unit_cost = $2,
-            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3`,
-      [nextStock, nextAvgUnitCost, consumableId]
+             updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+         AND user_id = $4`,
+      [nextStock, nextAvgUnitCost, consumableId, userId]
     );
 
     await client.query(
@@ -126,6 +128,11 @@ export const getAllPurchases = async (req, res) => {
   try {
     await ensureInventorySchema();
     await ensureBusinessSchema();
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     const result = await pool.query(
       `SELECT
@@ -138,13 +145,15 @@ export const getAllPurchases = async (req, res) => {
          TO_CHAR(p.purchase_date, 'YYYY-MM-DD') as purchase_date,
          p.user_id,
          p.notes,
-         p.created_at,
-         COALESCE(p.product_name, pr.name, c.name) as product_name,
-         COALESCE(p.unit, c.unit, 'unit') as unit
-         FROM purchases p
-        LEFT JOIN products pr ON p.product_id = pr.id
-        LEFT JOIN consumables c ON p.consumable_id = c.id
-         ORDER BY p.purchase_date DESC`
+          p.created_at,
+          COALESCE(p.product_name, pr.name, c.name) as product_name,
+          COALESCE(p.unit, c.unit, 'unit') as unit
+          FROM purchases p
+         LEFT JOIN products pr ON p.product_id = pr.id AND pr.user_id = p.user_id
+         LEFT JOIN consumables c ON p.consumable_id = c.id AND c.user_id = p.user_id
+         WHERE p.user_id = $1
+         ORDER BY p.purchase_date DESC`,
+      [userId]
     );
     res.json(result.rows);
   } catch (error) {
@@ -157,6 +166,11 @@ export const getPurchasesByDate = async (req, res) => {
   try {
     await ensureInventorySchema();
     await ensureBusinessSchema();
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     const { date } = req.query;
     if (!date) {
@@ -174,15 +188,16 @@ export const getPurchasesByDate = async (req, res) => {
          TO_CHAR(p.purchase_date, 'YYYY-MM-DD') as purchase_date,
          p.user_id,
          p.notes,
-         p.created_at,
-         COALESCE(p.product_name, pr.name, c.name) as product_name,
-         COALESCE(p.unit, c.unit, 'unit') as unit
-         FROM purchases p
-        LEFT JOIN products pr ON p.product_id = pr.id
-        LEFT JOIN consumables c ON p.consumable_id = c.id
-         WHERE p.purchase_date = $1
-         ORDER BY p.purchase_date DESC`,
-      [date]
+          p.created_at,
+          COALESCE(p.product_name, pr.name, c.name) as product_name,
+          COALESCE(p.unit, c.unit, 'unit') as unit
+          FROM purchases p
+         LEFT JOIN products pr ON p.product_id = pr.id AND pr.user_id = p.user_id
+         LEFT JOIN consumables c ON p.consumable_id = c.id AND c.user_id = p.user_id
+          WHERE p.purchase_date = $1
+            AND p.user_id = $2
+          ORDER BY p.purchase_date DESC`,
+       [date, userId]
     );
 
     res.json(result.rows);
@@ -196,6 +211,11 @@ export const getConsumablesStock = async (req, res) => {
   try {
     await ensureInventorySchema();
     await ensureBusinessSchema();
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     const result = await pool.query(
       `SELECT
@@ -204,11 +224,13 @@ export const getConsumablesStock = async (req, res) => {
          unit,
          current_stock,
          avg_unit_cost,
-         (current_stock * avg_unit_cost) AS inventory_cost,
+          (current_stock * avg_unit_cost) AS inventory_cost,
          low_stock_threshold,
          (current_stock <= low_stock_threshold) AS is_low_stock
-       FROM consumables
-       ORDER BY name`
+        FROM consumables
+        WHERE user_id = $1
+        ORDER BY name`,
+      [userId]
     );
 
     res.json(result.rows);

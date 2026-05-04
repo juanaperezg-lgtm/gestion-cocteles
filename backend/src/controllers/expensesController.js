@@ -33,6 +33,10 @@ export const createExpense = async (req, res) => {
       return res.status(400).json({ error: 'El monto debe ser mayor a 0' });
     }
 
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
     const result = await pool.query(
       `INSERT INTO operating_expenses
        (expense_date, category, description, amount, payment_method, notes, user_id)
@@ -45,7 +49,7 @@ export const createExpense = async (req, res) => {
         amountNumber,
         payment_method || null,
         notes || null,
-        userId || null,
+        userId,
       ]
     );
 
@@ -59,6 +63,11 @@ export const createExpense = async (req, res) => {
 export const getAllExpenses = async (req, res) => {
   try {
     await ensureBusinessSchema();
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     const result = await pool.query(
       `SELECT
@@ -71,8 +80,10 @@ export const getAllExpenses = async (req, res) => {
          notes,
          user_id,
          created_at
-       FROM operating_expenses
-       ORDER BY expense_date DESC, id DESC`
+        FROM operating_expenses
+        WHERE user_id = $1
+        ORDER BY expense_date DESC, id DESC`,
+      [userId]
     );
 
     res.json(result.rows);
@@ -85,6 +96,7 @@ export const getAllExpenses = async (req, res) => {
 export const getExpensesByDate = async (req, res) => {
   try {
     await ensureBusinessSchema();
+    const userId = req.user?.id;
 
     const { startDate, endDate } = req.query;
 
@@ -94,6 +106,10 @@ export const getExpensesByDate = async (req, res) => {
 
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
       return res.status(400).json({ error: 'Formato de fecha inválido. Usa YYYY-MM-DD' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
     }
 
     const result = await pool.query(
@@ -107,10 +123,11 @@ export const getExpensesByDate = async (req, res) => {
          notes,
          user_id,
          created_at
-       FROM operating_expenses
-       WHERE expense_date BETWEEN $1 AND $2
-       ORDER BY expense_date DESC, id DESC`,
-      [startDate, endDate]
+        FROM operating_expenses
+        WHERE expense_date BETWEEN $1 AND $2
+          AND user_id = $3
+        ORDER BY expense_date DESC, id DESC`,
+      [startDate, endDate, userId]
     );
 
     res.json(result.rows);

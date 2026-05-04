@@ -16,15 +16,16 @@ export const createSale = async (req, res) => {
     await ensureInventorySchema();
     await ensureBusinessSchema();
 
-    const { product_id, quantity, unit_price, notes, consumables_used } = req.body;
+    const { product_id, quantity, unit_price, payment_method, notes, consumables_used } = req.body;
     const userId = req.user?.id;
     const quantityNumber = Number(quantity);
     const unitPriceNumber = Number(unit_price);
+    const normalizedPaymentMethod = typeof payment_method === 'string' ? payment_method.trim().toLowerCase() : '';
 
     // Validaciones
-    if (!product_id || !quantity || !unit_price) {
+    if (!product_id || !quantity || !unit_price || !normalizedPaymentMethod) {
       return res.status(400).json({
-        error: 'Producto, cantidad y precio son requeridos'
+        error: 'Producto, cantidad, precio y método de pago son requeridos'
       });
     }
 
@@ -38,6 +39,12 @@ export const createSale = async (req, res) => {
     if (Number.isNaN(quantityNumber) || Number.isNaN(unitPriceNumber) || quantityNumber <= 0 || unitPriceNumber < 0) {
       return res.status(400).json({
         error: 'Cantidad debe ser mayor a 0 y precio debe ser válido'
+      });
+    }
+
+    if (normalizedPaymentMethod !== 'efectivo' && normalizedPaymentMethod !== 'transferencia') {
+      return res.status(400).json({
+        error: 'Método de pago inválido. Usa efectivo o transferencia'
       });
     }
 
@@ -57,8 +64,8 @@ export const createSale = async (req, res) => {
     transactionStarted = true;
 
     const productCheck = await client.query(
-      'SELECT id, name, purchase_price, stock_quantity FROM products WHERE id = $1 FOR UPDATE',
-      [product_id]
+      'SELECT id, name, purchase_price, stock_quantity FROM products WHERE id = $1 AND user_id = $2 FOR UPDATE',
+      [product_id, userId]
     );
 
     if (productCheck.rows.length === 0) {
@@ -87,8 +94,9 @@ export const createSale = async (req, res) => {
           `SELECT id, name, current_stock, avg_unit_cost
            FROM consumables
            WHERE id = $1
+             AND user_id = $2
            FOR UPDATE`,
-          [consumableId]
+          [consumableId, userId]
         );
 
         if (consumableResult.rows.length === 0) {
@@ -114,9 +122,10 @@ export const createSale = async (req, res) => {
         await client.query(
           `UPDATE consumables
            SET current_stock = current_stock - $1,
-               updated_at = CURRENT_TIMESTAMP
-           WHERE id = $2`,
-          [consumableQuantity, consumableId]
+                updated_at = CURRENT_TIMESTAMP
+           WHERE id = $2
+             AND user_id = $3`,
+          [consumableQuantity, consumableId, userId]
         );
 
       }
@@ -129,9 +138,10 @@ export const createSale = async (req, res) => {
       await client.query(
         `UPDATE products
          SET stock_quantity = stock_quantity - $1,
-             updated_at = CURRENT_TIMESTAMP
-         WHERE id = $2`,
-        [quantityNumber, product_id]
+              updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2
+           AND user_id = $3`,
+        [quantityNumber, product_id, userId]
       );
     }
 
@@ -139,10 +149,10 @@ export const createSale = async (req, res) => {
     const netProfit = total_amount - cogsAmount;
 
     const result = await client.query(
-      `INSERT INTO sales (product_id, quantity, unit_price, total_amount, cogs_amount, net_profit, user_id, sale_date, sale_time, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, ${BUSINESS_DATE_SQL}, ${BUSINESS_TIME_SQL}, $8)
+      `INSERT INTO sales (product_id, quantity, unit_price, total_amount, cogs_amount, net_profit, user_id, sale_date, sale_time, payment_method, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, ${BUSINESS_DATE_SQL}, ${BUSINESS_TIME_SQL}, $8, $9)
        RETURNING *`,
-      [product_id, quantityNumber, unitPriceNumber, total_amount, cogsAmount, netProfit, userId, notes || null]
+      [product_id, quantityNumber, unitPriceNumber, total_amount, cogsAmount, netProfit, userId, normalizedPaymentMethod, notes || null]
     );
 
     for (const [consumableId, consumableQuantity] of normalizedConsumables.entries()) {
@@ -173,6 +183,7 @@ export const createSale = async (req, res) => {
 export const getSalesByDate = async (req, res) => {
   try {
     await ensureBusinessSchema();
+    const userId = req.user?.id;
 
     const { date } = req.query;
 
@@ -189,6 +200,12 @@ export const getSalesByDate = async (req, res) => {
       });
     }
 
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Usuario no autenticado'
+      });
+    }
+
     const result = await pool.query(
       `SELECT
          s.id,
@@ -201,14 +218,16 @@ export const getSalesByDate = async (req, res) => {
          s.user_id,
          TO_CHAR(s.sale_date, 'YYYY-MM-DD') as sale_date,
          TO_CHAR(s.sale_time, 'HH24:MI:SS') as sale_time,
+         s.payment_method,
          s.notes,
          s.created_at,
          p.name as product_name
-       FROM sales s
-       JOIN products p ON s.product_id = p.id
-       WHERE s.sale_date = $1
-       ORDER BY s.sale_time DESC`,
-      [date]
+        FROM sales s
+        JOIN products p ON s.product_id = p.id AND p.user_id = s.user_id
+        WHERE s.sale_date = $1
+          AND s.user_id = $2
+        ORDER BY s.sale_time DESC`,
+      [date, userId]
     );
 
     res.json(result.rows);
@@ -223,6 +242,13 @@ export const getSalesByDate = async (req, res) => {
 export const getAllSales = async (req, res) => {
   try {
     await ensureBusinessSchema();
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Usuario no autenticado'
+      });
+    }
 
     const result = await pool.query(
       `SELECT
@@ -236,12 +262,16 @@ export const getAllSales = async (req, res) => {
          s.user_id,
          TO_CHAR(s.sale_date, 'YYYY-MM-DD') as sale_date,
          TO_CHAR(s.sale_time, 'HH24:MI:SS') as sale_time,
+         s.payment_method,
          s.notes,
          s.created_at,
          p.name as product_name
-       FROM sales s
-       JOIN products p ON s.product_id = p.id
-       ORDER BY s.sale_date DESC, s.sale_time DESC`
+        FROM sales s
+        JOIN products p ON s.product_id = p.id AND p.user_id = s.user_id
+        WHERE s.user_id = $1
+        ORDER BY s.sale_date DESC, s.sale_time DESC`
+      ,
+      [userId]
     );
 
     res.json(result.rows);
@@ -257,11 +287,20 @@ export const getConsumables = async (req, res) => {
   try {
     await ensureInventorySchema();
     await ensureBusinessSchema();
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Usuario no autenticado'
+      });
+    }
 
     const result = await pool.query(
       `SELECT id, name, unit, current_stock, avg_unit_cost, low_stock_threshold
-       FROM consumables
-       ORDER BY name`
+        FROM consumables
+        WHERE user_id = $1
+        ORDER BY name`,
+      [userId]
     );
 
     res.json(result.rows);
@@ -276,10 +315,16 @@ export const getConsumables = async (req, res) => {
 export const getProductConsumablesTemplate = async (req, res) => {
   try {
     await ensureInventorySchema();
+    await ensureBusinessSchema();
+    const userId = req.user?.id;
 
     const productId = Number(req.params.productId);
     if (!Number.isInteger(productId)) {
       return res.status(400).json({ error: 'ID de producto inválido' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
     }
 
     const result = await pool.query(
@@ -290,11 +335,13 @@ export const getProductConsumablesTemplate = async (req, res) => {
          c.name,
          c.unit,
          c.current_stock
-       FROM product_consumables pc
-       JOIN consumables c ON c.id = pc.consumable_id
-       WHERE pc.product_id = $1
-       ORDER BY c.name`,
-      [productId]
+        FROM product_consumables pc
+        JOIN products p ON p.id = pc.product_id
+        JOIN consumables c ON c.id = pc.consumable_id AND c.user_id = p.user_id
+        WHERE pc.product_id = $1
+          AND p.user_id = $2
+        ORDER BY c.name`,
+      [productId, userId]
     );
 
     res.json(result.rows);
@@ -312,6 +359,8 @@ export const saveProductConsumablesTemplate = async (req, res) => {
 
   try {
     await ensureInventorySchema();
+    await ensureBusinessSchema();
+    const userId = req.user?.id;
 
     const productId = Number(req.params.productId);
     const { consumables } = req.body;
@@ -322,6 +371,10 @@ export const saveProductConsumablesTemplate = async (req, res) => {
 
     if (!Array.isArray(consumables)) {
       return res.status(400).json({ error: 'El campo consumables debe ser una lista' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
     }
 
     const normalizedConsumables = consumables.reduce((acc, item) => {
@@ -339,8 +392,8 @@ export const saveProductConsumablesTemplate = async (req, res) => {
     transactionStarted = true;
 
     const productCheck = await client.query(
-      'SELECT id FROM products WHERE id = $1',
-      [productId]
+      'SELECT id FROM products WHERE id = $1 AND user_id = $2',
+      [productId, userId]
     );
 
     if (productCheck.rows.length === 0) {
@@ -356,8 +409,8 @@ export const saveProductConsumablesTemplate = async (req, res) => {
 
     for (const [consumableId, quantityPerSale] of normalizedConsumables.entries()) {
       const consumableCheck = await client.query(
-        'SELECT id FROM consumables WHERE id = $1',
-        [consumableId]
+        'SELECT id FROM consumables WHERE id = $1 AND user_id = $2',
+        [consumableId, userId]
       );
 
       if (consumableCheck.rows.length === 0) {

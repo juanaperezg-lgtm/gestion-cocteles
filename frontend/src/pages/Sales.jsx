@@ -15,6 +15,7 @@ function Sales() {
     product_id: '',
     quantity: '',
     unit_price: '',
+    payment_method: 'efectivo',
     notes: '',
   });
   const [selectedConsumables, setSelectedConsumables] = useState({});
@@ -116,7 +117,7 @@ function Sales() {
     e.preventDefault();
     setMessage('');
 
-    if (!formData.product_id || !formData.quantity || !formData.unit_price) {
+    if (!formData.product_id || !formData.quantity || !formData.unit_price || !formData.payment_method) {
       setMessage('error:Todos los campos son requeridos');
       return;
     }
@@ -145,7 +146,7 @@ function Sales() {
       }
 
       setMessage('success:Venta registrada exitosamente');
-      setFormData({ product_id: '', quantity: '', unit_price: '', notes: '' });
+      setFormData({ product_id: '', quantity: '', unit_price: '', payment_method: 'efectivo', notes: '' });
       setSelectedConsumables({});
       fetchData();
 
@@ -222,6 +223,19 @@ function Sales() {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label>Método de pago</label>
+                <select
+                  name="payment_method"
+                  value={formData.payment_method}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="efectivo">Efectivo</option>
+                  <option value="transferencia">Transferencia</option>
+                </select>
               </div>
 
               <div className="form-group">
@@ -303,6 +317,7 @@ function Sales() {
                       <th>Cantidad</th>
                       <th>Precio Unitario</th>
                       <th>Total</th>
+                      <th>Método de Pago</th>
                       <th>Fecha</th>
                       <th>Hora</th>
                     </tr>
@@ -316,6 +331,7 @@ function Sales() {
                         <td className="total">
                           ${sale.total_amount.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
                         </td>
+                        <td>{sale.payment_method === 'transferencia' ? 'Transferencia' : 'Efectivo'}</td>
                         <td>{sale.sale_date}</td>
                         <td>{sale.sale_time}</td>
                       </tr>

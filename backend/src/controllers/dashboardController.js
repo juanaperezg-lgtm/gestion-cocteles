@@ -17,6 +17,11 @@ const toNumber = (value) => {
 export const getDashboardToday = async (req, res) => {
   try {
     await ensureBusinessSchema();
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     const todayResult = await pool.query(`SELECT TO_CHAR(${BUSINESS_DATE_SQL}, 'YYYY-MM-DD') as today`);
     const today = todayResult.rows[0].today;
@@ -26,30 +31,40 @@ export const getDashboardToday = async (req, res) => {
          COALESCE(SUM(total_amount), 0) AS total_revenue,
          COALESCE(SUM(cogs_amount), 0) AS total_cogs,
          COALESCE(SUM(net_profit), 0) AS gross_profit,
+         COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN total_amount ELSE 0 END), 0) AS total_cash_sales,
+         COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN total_amount ELSE 0 END), 0) AS total_transfer_sales,
          COUNT(*) AS sales_count
-       FROM sales
-       WHERE sale_date = ${BUSINESS_DATE_SQL}`
+        FROM sales
+        WHERE sale_date = ${BUSINESS_DATE_SQL}
+          AND user_id = $1`,
+      [userId]
     );
 
     const expensesSummary = await pool.query(
       `SELECT COALESCE(SUM(amount), 0) AS total_expenses
        FROM operating_expenses
-       WHERE expense_date = ${BUSINESS_DATE_SQL}`
+       WHERE expense_date = ${BUSINESS_DATE_SQL}
+         AND user_id = $1`,
+      [userId]
     );
 
     const topProducts = await pool.query(
       `SELECT p.name, SUM(s.quantity) as quantity_sold, SUM(s.total_amount) as revenue
        FROM sales s
-       JOIN products p ON s.product_id = p.id
+       JOIN products p ON s.product_id = p.id AND p.user_id = s.user_id
        WHERE s.sale_date = ${BUSINESS_DATE_SQL}
+         AND s.user_id = $1
        GROUP BY p.id, p.name
        ORDER BY revenue DESC
-       LIMIT 5`
+       LIMIT 5`,
+      [userId]
     );
 
     const revenue = parseFloat(salesSummary.rows[0].total_revenue);
     const cogs = parseFloat(salesSummary.rows[0].total_cogs);
     const grossProfit = parseFloat(salesSummary.rows[0].gross_profit);
+    const totalCashSales = parseFloat(salesSummary.rows[0].total_cash_sales);
+    const totalTransferSales = parseFloat(salesSummary.rows[0].total_transfer_sales);
     const operatingExpenses = parseFloat(expensesSummary.rows[0].total_expenses);
     const netProfitAfterExpenses = grossProfit - operatingExpenses;
 
@@ -58,6 +73,8 @@ export const getDashboardToday = async (req, res) => {
       total_sales: revenue,
       total_cogs: cogs,
       gross_profit: grossProfit,
+      total_cash_sales: totalCashSales,
+      total_transfer_sales: totalTransferSales,
       operating_expenses: operatingExpenses,
       net_profit_after_expenses: netProfitAfterExpenses,
       sales_count: parseInt(salesSummary.rows[0].sales_count, 10),
@@ -72,6 +89,11 @@ export const getDashboardToday = async (req, res) => {
 export const getDashboardMonth = async (req, res) => {
   try {
     await ensureBusinessSchema();
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     const monthResult = await pool.query(`SELECT TO_CHAR(${BUSINESS_DATE_SQL}, 'YYYY-MM') as month_str`);
     const monthStr = monthResult.rows[0].month_str;
@@ -81,34 +103,44 @@ export const getDashboardMonth = async (req, res) => {
          COALESCE(SUM(total_amount), 0) as total_revenue,
          COALESCE(SUM(cogs_amount), 0) as total_cogs,
          COALESCE(SUM(net_profit), 0) as gross_profit,
+         COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN total_amount ELSE 0 END), 0) AS total_cash_sales,
+         COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN total_amount ELSE 0 END), 0) AS total_transfer_sales,
          COUNT(*) as sales_count
-       FROM sales
-       WHERE sale_date >= ${BUSINESS_MONTH_START_SQL}
-         AND sale_date < ${BUSINESS_NEXT_MONTH_START_SQL}`
+        FROM sales
+        WHERE sale_date >= ${BUSINESS_MONTH_START_SQL}
+          AND sale_date < ${BUSINESS_NEXT_MONTH_START_SQL}
+          AND user_id = $1`,
+      [userId]
     );
 
     const expensesData = await pool.query(
       `SELECT COALESCE(SUM(amount), 0) AS total_expenses
        FROM operating_expenses
        WHERE expense_date >= ${BUSINESS_MONTH_START_SQL}
-         AND expense_date < ${BUSINESS_NEXT_MONTH_START_SQL}`
+         AND expense_date < ${BUSINESS_NEXT_MONTH_START_SQL}
+         AND user_id = $1`,
+      [userId]
     );
 
     const topProducts = await pool.query(
       `SELECT p.name, SUM(s.quantity) as quantity_sold, SUM(s.total_amount) as revenue
        FROM sales s
-       JOIN products p ON s.product_id = p.id
+       JOIN products p ON s.product_id = p.id AND p.user_id = s.user_id
        WHERE s.sale_date >= ${BUSINESS_MONTH_START_SQL}
          AND s.sale_date < ${BUSINESS_NEXT_MONTH_START_SQL}
+         AND s.user_id = $1
        GROUP BY p.id, p.name
        ORDER BY revenue DESC
-       LIMIT 10`
+       LIMIT 10`,
+      [userId]
     );
 
     const revenue = revenueData.rows[0];
     const totalRevenue = parseFloat(revenue.total_revenue);
     const totalCogs = parseFloat(revenue.total_cogs);
     const grossProfit = parseFloat(revenue.gross_profit);
+    const totalCashSales = parseFloat(revenue.total_cash_sales);
+    const totalTransferSales = parseFloat(revenue.total_transfer_sales);
     const operatingExpenses = parseFloat(expensesData.rows[0].total_expenses);
     const netProfitAfterExpenses = grossProfit - operatingExpenses;
 
@@ -117,6 +149,8 @@ export const getDashboardMonth = async (req, res) => {
       total_revenue: totalRevenue,
       total_cogs: totalCogs,
       gross_earnings: grossProfit,
+      total_cash_sales: totalCashSales,
+      total_transfer_sales: totalTransferSales,
       total_profit: netProfitAfterExpenses,
       operating_expenses: operatingExpenses,
       net_profit_after_expenses: netProfitAfterExpenses,
@@ -133,13 +167,20 @@ export const getInventoryStatus = async (req, res) => {
   try {
     await ensureInventorySchema();
     await ensureBusinessSchema();
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     const productsResult = await pool.query(
       `SELECT p.id, p.name, p.stock_quantity, p.purchase_price, p.sale_price,
               (p.stock_quantity * p.purchase_price) as inventory_cost,
               (p.stock_quantity * p.sale_price) as inventory_value
        FROM products p
-       ORDER BY p.stock_quantity DESC`
+       WHERE p.user_id = $1
+       ORDER BY p.stock_quantity DESC`,
+      [userId]
     );
 
     const consumablesResult = await pool.query(
@@ -153,7 +194,10 @@ export const getInventoryStatus = async (req, res) => {
          low_stock_threshold,
          (current_stock <= low_stock_threshold) AS is_low_stock
        FROM consumables
+       WHERE user_id = $1
        ORDER BY name`
+      ,
+      [userId]
     );
 
     const totalInventoryCost = productsResult.rows.reduce((sum, p) => sum + (parseFloat(p.inventory_cost) || 0), 0);
@@ -174,23 +218,25 @@ export const getInventoryStatus = async (req, res) => {
   }
 };
 
-const getBusinessSummaryData = async (startDate, endDate) => {
+const getBusinessSummaryData = async (startDate, endDate, userId) => {
   const salesSummary = await pool.query(
     `SELECT
        COALESCE(SUM(total_amount), 0) AS total_revenue,
        COALESCE(SUM(cogs_amount), 0) AS total_cogs,
        COALESCE(SUM(net_profit), 0) AS gross_profit,
        COUNT(*) AS sales_count
-     FROM sales
-     WHERE sale_date BETWEEN $1 AND $2`,
-    [startDate, endDate]
+      FROM sales
+      WHERE sale_date BETWEEN $1 AND $2
+        AND user_id = $3`,
+    [startDate, endDate, userId]
   );
 
   const expensesSummary = await pool.query(
     `SELECT COALESCE(SUM(amount), 0) AS total_expenses
      FROM operating_expenses
-     WHERE expense_date BETWEEN $1 AND $2`,
-    [startDate, endDate]
+     WHERE expense_date BETWEEN $1 AND $2
+       AND user_id = $3`,
+    [startDate, endDate, userId]
   );
 
   const salesRows = await pool.query(
@@ -204,11 +250,12 @@ const getBusinessSummaryData = async (startDate, endDate) => {
        s.total_amount,
        s.cogs_amount,
        s.net_profit
-     FROM sales s
-     JOIN products p ON p.id = s.product_id
-     WHERE s.sale_date BETWEEN $1 AND $2
-     ORDER BY s.sale_date DESC, s.sale_time DESC`,
-    [startDate, endDate]
+      FROM sales s
+      JOIN products p ON p.id = s.product_id AND p.user_id = s.user_id
+      WHERE s.sale_date BETWEEN $1 AND $2
+        AND s.user_id = $3
+      ORDER BY s.sale_date DESC, s.sale_time DESC`,
+    [startDate, endDate, userId]
   );
 
   const expensesRows = await pool.query(
@@ -219,10 +266,11 @@ const getBusinessSummaryData = async (startDate, endDate) => {
        description,
        amount,
        payment_method
-     FROM operating_expenses
-     WHERE expense_date BETWEEN $1 AND $2
-     ORDER BY expense_date DESC, id DESC`,
-    [startDate, endDate]
+      FROM operating_expenses
+      WHERE expense_date BETWEEN $1 AND $2
+        AND user_id = $3
+      ORDER BY expense_date DESC, id DESC`,
+    [startDate, endDate, userId]
   );
 
   const topProducts = await pool.query(
@@ -231,13 +279,14 @@ const getBusinessSummaryData = async (startDate, endDate) => {
        SUM(s.quantity) AS quantity_sold,
        SUM(s.total_amount) AS revenue,
        SUM(s.net_profit) AS gross_profit
-     FROM sales s
-     JOIN products p ON p.id = s.product_id
-     WHERE s.sale_date BETWEEN $1 AND $2
-     GROUP BY p.id, p.name
-     ORDER BY revenue DESC
-     LIMIT 10`,
-    [startDate, endDate]
+      FROM sales s
+      JOIN products p ON p.id = s.product_id AND p.user_id = s.user_id
+      WHERE s.sale_date BETWEEN $1 AND $2
+        AND s.user_id = $3
+      GROUP BY p.id, p.name
+      ORDER BY revenue DESC
+      LIMIT 10`,
+    [startDate, endDate, userId]
   );
 
   const totalRevenue = toNumber(salesSummary.rows[0].total_revenue);
@@ -279,6 +328,7 @@ const validateSummaryRange = (startDate, endDate) => {
 export const getBusinessSummaryByRange = async (req, res) => {
   try {
     await ensureBusinessSchema();
+    const userId = req.user?.id;
 
     const { startDate, endDate } = req.query;
     const validationError = validateSummaryRange(startDate, endDate);
@@ -286,7 +336,11 @@ export const getBusinessSummaryByRange = async (req, res) => {
       return res.status(400).json({ error: validationError });
     }
 
-    const summary = await getBusinessSummaryData(startDate, endDate);
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    const summary = await getBusinessSummaryData(startDate, endDate, userId);
     res.json(summary);
   } catch (error) {
     console.error('Error al obtener resumen del negocio:', error.message);
@@ -297,6 +351,7 @@ export const getBusinessSummaryByRange = async (req, res) => {
 export const downloadBusinessSummaryPdf = async (req, res) => {
   try {
     await ensureBusinessSchema();
+    const userId = req.user?.id;
 
     const { startDate, endDate } = req.query;
     const validationError = validateSummaryRange(startDate, endDate);
@@ -304,7 +359,11 @@ export const downloadBusinessSummaryPdf = async (req, res) => {
       return res.status(400).json({ error: validationError });
     }
 
-    const summary = await getBusinessSummaryData(startDate, endDate);
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    const summary = await getBusinessSummaryData(startDate, endDate, userId);
     const formatCurrency = (value) => `$${toNumber(value).toLocaleString('es-AR', { maximumFractionDigits: 2 })}`;
     const fileName = `reporte_financiero_${startDate}_${endDate}.pdf`;
 

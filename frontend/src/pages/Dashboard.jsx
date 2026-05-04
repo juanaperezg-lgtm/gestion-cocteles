@@ -1,4 +1,4 @@
-import { BarChart3, Target, TrendingUp, Zap } from 'lucide-react';
+import { BarChart3, Landmark, Target, TrendingUp, Wallet, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
@@ -64,6 +64,26 @@ function Dashboard() {
               </div>
               <div className="stat-value">
                 ${toNumber(todayData?.total_sales).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div className="stat-box">
+              <div className="stat-label">
+                <Wallet size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Ventas en Efectivo
+              </div>
+              <div className="stat-value">
+                ${toNumber(todayData?.total_cash_sales).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div className="stat-box">
+              <div className="stat-label">
+                <Landmark size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Ventas por Transferencia
+              </div>
+              <div className="stat-value">
+                ${toNumber(todayData?.total_transfer_sales).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
               </div>
             </div>
 
@@ -135,6 +155,26 @@ function Dashboard() {
               </div>
               <div className="stat-value">
                 ${toNumber(monthData?.total_revenue).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div className="stat-box">
+              <div className="stat-label">
+                <Wallet size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Ventas en Efectivo
+              </div>
+              <div className="stat-value">
+                ${toNumber(monthData?.total_cash_sales).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div className="stat-box">
+              <div className="stat-label">
+                <Landmark size={20} style={{ display: 'inline', marginRight: '8px' }} />
+                Ventas por Transferencia
+              </div>
+              <div className="stat-value">
+                ${toNumber(monthData?.total_transfer_sales).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
               </div>
             </div>
 
