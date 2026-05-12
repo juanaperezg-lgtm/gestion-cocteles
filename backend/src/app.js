@@ -1,4 +1,5 @@
 import express from 'express';
+import https from 'https';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
@@ -66,4 +67,22 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🍹 Backend corriendo en puerto ${PORT}`);
   console.log(`Entorno: ${process.env.NODE_ENV || 'development'}`);
+
+  // Mecanismo para evitar que Render suspenda el servidor (Sleep)
+  const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
+  if (RENDER_EXTERNAL_URL) {
+    // 14 minutos en milisegundos (Render duerme la app a los 15 minutos)
+    const pingInterval = 14 * 60 * 1000;
+    setInterval(() => {
+      https.get(`${RENDER_EXTERNAL_URL}/api/health`, (resp) => {
+        if (resp.statusCode === 200) {
+          console.log(`Auto-ping exitoso: la aplicación se mantiene activa - ${new Date().toISOString()}`);
+        } else {
+          console.error(`Auto-ping falló con estado: ${resp.statusCode}`);
+        }
+      }).on("error", (err) => {
+        console.error("Error en auto-ping:", err.message);
+      });
+    }, pingInterval);
+  }
 });
