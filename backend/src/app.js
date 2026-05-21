@@ -16,8 +16,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors());
+// Middleware - CORS configurado para producción
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',')
+  : ['*'];
+
+app.use(cors({
+  origin: allowedOrigins.includes('*') ? true : allowedOrigins,
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
@@ -68,13 +75,16 @@ app.listen(PORT, () => {
   console.log(`🍹 Backend corriendo en puerto ${PORT}`);
   console.log(`Entorno: ${process.env.NODE_ENV || 'development'}`);
 
-  // Mecanismo para evitar que Render suspenda el servidor (Sleep)
-  const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
-  if (RENDER_EXTERNAL_URL) {
-    // 14 minutos en milisegundos (Render duerme la app a los 15 minutos)
-    const pingInterval = 14 * 60 * 1000;
+  // Mecanismo para evitar que el servidor se suspenda (Sleep)
+  // Soporta tanto Railway (RAILWAY_PUBLIC_DOMAIN) como Render (RENDER_EXTERNAL_URL)
+  const externalUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+    : process.env.RENDER_EXTERNAL_URL;
+
+  if (externalUrl) {
+    const pingInterval = 14 * 60 * 1000; // 14 minutos
     setInterval(() => {
-      https.get(`${RENDER_EXTERNAL_URL}/api/health`, (resp) => {
+      https.get(`${externalUrl}/api/health`, (resp) => {
         if (resp.statusCode === 200) {
           console.log(`Auto-ping exitoso: la aplicación se mantiene activa - ${new Date().toISOString()}`);
         } else {
